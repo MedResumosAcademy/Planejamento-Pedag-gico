@@ -77,7 +77,6 @@ export default function Dashboard() {
         .gte('data_hora', startDate)
         .lte('data_hora', endDate + 'T23:59:59')
         .order('data_hora')
-      if (colab?.nivel === 'professor') q = q.eq('professor_id', user.id)
       const { data: gravs } = await q
       setGravacoes(gravs || [])
     }
