@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface DiscStats {
@@ -10,8 +10,7 @@ interface DiscStats {
   total_temas: number; concluidos: number; em_andamento: number; pendentes: number
   paginas_totais: number; progresso_geral: number
 }
-
-interface UserInfo { nivel: string; nome: string }
+interface UserInfo { id: string; nivel: string; nome: string }
 
 export default function Dashboard() {
   const router = useRouter()
@@ -29,7 +28,7 @@ export default function Dashboard() {
     if (user) {
       const { data: colab } = await supabase.from('colaboradores').select('nivel, nome').eq('id', user.id).single()
       if (colab) {
-        setUserInfo(colab)
+        setUserInfo({ id: user.id, nivel: colab.nivel, nome: colab.nome })
         if (colab.nivel === 'professor') {
           const { data: pd } = await supabase.from('professor_disciplinas').select('disciplina_id').eq('professor_id', user.id)
           setProfessorDisciplinas(pd?.map(d => d.disciplina_id) || [])
@@ -37,8 +36,7 @@ export default function Dashboard() {
       }
     }
     const r = await fetch('/api/disciplines')
-    const all = await r.json()
-    setDisciplinas(all)
+    setDisciplinas(await r.json())
     setLoading(false)
   }, [])
 
@@ -67,6 +65,7 @@ export default function Dashboard() {
     { href:'/', label:'Dashboard', icon:'📊' },
     { href:'/disciplinas', label:'Disciplinas', icon:'📚' },
     { href:'/kanban', label:'Kanban', icon:'🗂️' },
+    { href:'/agenda', label:'Agenda', icon:'📅' },
     ...(isCoordinator ? [{ href:'/admin/colaboradores', label:'Collaborators', icon:'👥' }] : [])
   ]
 
@@ -74,30 +73,26 @@ export default function Dashboard() {
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0a0d14' }}>
-      {/* Sidebar */}
       <div style={{ width:SW, background:'rgba(255,255,255,0.02)', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0, transition:'width 0.2s ease', overflow:'hidden' }}>
         <div style={{ padding:'20px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:72 }}>
-          {sidebarOpen && (
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>M</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:'#e2e8f0', whiteSpace:'nowrap' }}>Med2026</div>
-                <div style={{ fontSize:10, color:'#64748b', whiteSpace:'nowrap' }}>Ciclo Básico</div>
+          {sidebarOpen ? (
+            <>
+              <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>M</div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#e2e8f0', whiteSpace:'nowrap' }}>Med2026</div>
+                  <div style={{ fontSize:10, color:'#64748b', whiteSpace:'nowrap' }}>Ciclo Básico</div>
+                </div>
               </div>
+              <button onClick={() => setSidebarOpen(false)} style={{ background:'rgba(255,255,255,0.05)', border:'none', borderRadius:6, padding:'4px 8px', color:'#64748b', cursor:'pointer', fontSize:14 }}>←</button>
+            </>
+          ) : (
+            <div style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
+              <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white' }}>M</div>
+              <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', color:'#64748b', cursor:'pointer', fontSize:14 }}>→</button>
             </div>
           )}
-          {!sidebarOpen && (
-            <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', margin:'0 auto' }}>M</div>
-          )}
-          {sidebarOpen && (
-            <button onClick={() => setSidebarOpen(false)} style={{ background:'rgba(255,255,255,0.05)', border:'none', borderRadius:6, padding:'4px 8px', color:'#64748b', cursor:'pointer', fontSize:14 }}>←</button>
-          )}
         </div>
-
-        {!sidebarOpen && (
-          <button onClick={() => setSidebarOpen(true)} style={{ background:'none', border:'none', color:'#64748b', cursor:'pointer', padding:'12px', fontSize:16, textAlign:'center' }}>→</button>
-        )}
-
         <nav style={{ padding:'12px 8px', flex:1 }}>
           {navItems.map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration:'none' }}>
@@ -108,22 +103,19 @@ export default function Dashboard() {
             </Link>
           ))}
         </nav>
-
         <div style={{ padding:'16px 8px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
-          <button onClick={handleLogout} title={!sidebarOpen ? 'Sign Out' : ''} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color:'#64748b', background:'transparent', border:'none', fontSize:13, fontWeight:500, cursor:'pointer', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
+          <button onClick={handleLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color:'#64748b', background:'transparent', border:'none', fontSize:13, cursor:'pointer', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
             <span>🚪</span>{sidebarOpen && 'Sign Out'}
           </button>
         </div>
-
         {sidebarOpen && (
           <div style={{ padding:'0 20px 16px', fontSize:11, color:'#475569' }}>
-            {userInfo?.nome && <div style={{ marginBottom:4, color:'#64748b', fontWeight:500 }}>{userInfo.nome}</div>}
+            {userInfo?.nome && <div style={{ marginBottom:4, color:'#64748b', fontWeight:500, fontSize:12 }}>{userInfo.nome}</div>}
             258 temas · 18 disciplinas<br/>~2.136 páginas
           </div>
         )}
       </div>
 
-      {/* Main */}
       <div style={{ marginLeft:SW, flex:1, padding:'32px 40px', transition:'margin-left 0.2s ease' }}>
         <div style={{ marginBottom:32 }}>
           <h1 style={{ fontSize:28, fontWeight:700, color:'#f1f5f9', letterSpacing:'-0.5px' }}>
@@ -134,7 +126,6 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:32 }}>
           {[
             { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#a78bfa' },
@@ -150,7 +141,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Progress bar */}
         <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:32 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
             <span style={{ fontSize:13, fontWeight:600, color:'#cbd5e1' }}>Progresso Total</span>
@@ -169,13 +159,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Search */}
         <div style={{ marginBottom:20 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍  Buscar disciplina..."
             style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 14px', color:'#e2e8f0', fontSize:13, outline:'none', width:300 }} />
         </div>
 
-        {/* Grid */}
         {loading ? (
           <div style={{ textAlign:'center', padding:60, color:'#475569' }}>Carregando...</div>
         ) : (
@@ -211,9 +199,7 @@ export default function Dashboard() {
                 </Link>
               )
             })}
-            {filtered.length === 0 && (
-              <div style={{ color:'#475569', fontSize:14, padding:40 }}>No disciplines found.</div>
-            )}
+            {filtered.length === 0 && <div style={{ color:'#475569', fontSize:14, padding:40 }}>No disciplines found.</div>}
           </div>
         )}
       </div>
