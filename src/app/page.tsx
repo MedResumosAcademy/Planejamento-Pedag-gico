@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { useRouter, usePathname } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 interface DiscStats {
@@ -10,16 +10,50 @@ interface DiscStats {
   total_temas: number; concluidos: number; em_andamento: number; pendentes: number
   paginas_totais: number; progresso_geral: number
 }
+interface Gravacao {
+  id: number; professor_id: string; disciplina_id: number; tema_id: number
+  data_hora: string; duracao_minutos: number; status: string; observacoes: string | null
+  colaboradores?: { nome: string }
+  disciplinas?: { nome: string; cor: string }
+  temas?: { tema_especifico: string }
+}
 interface UserInfo { id: string; nivel: string; nome: string }
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+const STATUS_COLOR: Record<string, string> = {
+  proposta: '#fbbf24', aprovada: '#60a5fa', concluida: '#4ade80', cancelada: '#f87171'
+}
+
+function getWeekDates() {
+  const now = new Date()
+  const day = now.getDay()
+  const monday = new Date(now)
+  monday.setDate(now.getDate() - day + 1)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday)
+    d.setDate(monday.getDate() + i)
+    return d
+  })
+}
+
+function getPeriod(hora: string): 'manha' | 'tarde' | 'noite' {
+  const h = parseInt(hora.slice(11, 13))
+  if (h < 12) return 'manha'
+  if (h < 18) return 'tarde'
+  return 'noite'
+}
 
 export default function Dashboard() {
   const router = useRouter()
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
+  const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [professorDisciplinas, setProfessorDisciplinas] = useState<number[]>([])
+  const [weekOffset, setWeekOffset] = useState(0)
+  const weekDates = getWeekDates()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -34,6 +68,18 @@ export default function Dashboard() {
           setProfessorDisciplinas(pd?.map(d => d.disciplina_id) || [])
         }
       }
+
+      // Load this week's recordings
+      const startDate = weekDates[0].toISOString().split('T')[0]
+      const endDate = weekDates[6].toISOString().split('T')[0]
+      let q = supabase.from('gravacoes')
+        .select('*, colaboradores(nome), disciplinas(nome, cor), temas(tema_especifico)')
+        .gte('data_hora', startDate)
+        .lte('data_hora', endDate + 'T23:59:59')
+        .order('data_hora')
+      if (colab?.nivel === 'professor') q = q.eq('professor_id', user.id)
+      const { data: gravs } = await q
+      setGravacoes(gravs || [])
     }
     const r = await fetch('/api/disciplines')
     setDisciplinas(await r.json())
@@ -46,6 +92,12 @@ export default function Dashboard() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/login')
+  }
+
+  async function updateStatus(id: number, status: string) {
+    const supabase = createClient()
+    await supabase.from('gravacoes').update({ status }).eq('id', id)
+    await load()
   }
 
   const isProfessor = userInfo?.nivel === 'professor'
@@ -71,9 +123,16 @@ export default function Dashboard() {
 
   const SW = sidebarOpen ? 220 : 64
 
+  const periods = [
+    { key: 'manha', label: '🌅 Morning', range: '00:00–12:00' },
+    { key: 'tarde', label: '☀️ Afternoon', range: '12:00–18:00' },
+    { key: 'noite', label: '🌙 Evening', range: '18:00–24:00' },
+  ]
+
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0a0d14' }}>
-      <div style={{ width:SW, background:'rgba(255,255,255,0.02)', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0, transition:'width 0.2s ease', overflow:'hidden' }}>
+      {/* Sidebar */}
+      <div style={{ width:SW, background:'rgba(255,255,255,0.02)', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0, transition:'width 0.2s ease', overflow:'hidden', zIndex:10 }}>
         <div style={{ padding:'20px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:72 }}>
           {sidebarOpen ? (
             <>
@@ -116,8 +175,9 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* Main */}
       <div style={{ marginLeft:SW, flex:1, padding:'32px 40px', transition:'margin-left 0.2s ease' }}>
-        <div style={{ marginBottom:32 }}>
+        <div style={{ marginBottom:28 }}>
           <h1 style={{ fontSize:28, fontWeight:700, color:'#f1f5f9', letterSpacing:'-0.5px' }}>
             {isProfessor ? `Olá, ${userInfo?.nome?.split(' ')[0]}! 👋` : 'Dashboard de Produção'}
           </h1>
@@ -126,7 +186,8 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:32 }}>
+        {/* KPIs */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
           {[
             { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#a78bfa' },
             { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#fbbf24' },
@@ -141,7 +202,92 @@ export default function Dashboard() {
           ))}
         </div>
 
-        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:32 }}>
+        {/* Weekly Calendar */}
+        <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
+            <h2 style={{ fontSize:15, fontWeight:700, color:'#e2e8f0', margin:0 }}>📅 Weekly Recording Schedule</h2>
+            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+              <span style={{ fontSize:12, color:'#64748b' }}>
+                {weekDates[0].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })} – {weekDates[6].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })}
+              </span>
+              <Link href="/agenda" style={{ textDecoration:'none', background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:8, padding:'6px 12px', color:'#a78bfa', fontSize:12, fontWeight:600 }}>
+                Full Agenda →
+              </Link>
+            </div>
+          </div>
+
+          {/* Day headers */}
+          <div style={{ display:'grid', gridTemplateColumns:'80px repeat(7, 1fr)', gap:4, marginBottom:4 }}>
+            <div />
+            {weekDates.map((date, i) => {
+              const isToday = date.toISOString().split('T')[0] === new Date().toISOString().split('T')[0]
+              return (
+                <div key={i} style={{ textAlign:'center', padding:'6px 4px', borderRadius:8, background: isToday ? 'rgba(99,102,241,0.15)' : 'transparent' }}>
+                  <div style={{ fontSize:10, color:'#64748b', fontWeight:600 }}>{DAYS[date.getDay()]}</div>
+                  <div style={{ fontSize:16, fontWeight:700, color: isToday ? '#a78bfa' : '#e2e8f0' }}>{date.getDate()}</div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Period rows */}
+          {periods.map(period => (
+            <div key={period.key} style={{ display:'grid', gridTemplateColumns:'80px repeat(7, 1fr)', gap:4, marginBottom:4 }}>
+              <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-start', paddingTop:8, paddingRight:8 }}>
+                <div style={{ fontSize:10, color:'#64748b', fontWeight:600, textAlign:'right' }}>{period.label}</div>
+                <div style={{ fontSize:9, color:'#475569', textAlign:'right' }}>{period.range}</div>
+              </div>
+              {weekDates.map((date, i) => {
+                const dateStr = date.toISOString().split('T')[0]
+                const isToday = dateStr === new Date().toISOString().split('T')[0]
+                const dayPeriodGravs = gravacoes.filter(g =>
+                  g.data_hora.startsWith(dateStr) && getPeriod(g.data_hora) === period.key
+                )
+                return (
+                  <div key={i} style={{ minHeight:64, background: isToday ? 'rgba(99,102,241,0.04)' : 'rgba(255,255,255,0.01)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:8, padding:4, display:'flex', flexDirection:'column', gap:3 }}>
+                    {dayPeriodGravs.map(g => (
+                      <div key={g.id} style={{ background:`${STATUS_COLOR[g.status]}15`, border:`1px solid ${STATUS_COLOR[g.status]}40`, borderRadius:6, padding:'4px 6px' }}>
+                        <div style={{ fontSize:9, color: STATUS_COLOR[g.status], fontWeight:700 }}>
+                          {g.data_hora.slice(11,16)} {isCoordinator ? `· ${g.colaboradores?.nome?.split(' ')[0]}` : ''}
+                        </div>
+                        <div style={{ fontSize:10, color:'#cbd5e1', lineHeight:1.3, marginTop:1 }}>
+                          {g.disciplinas?.nome?.slice(0,14)}{(g.disciplinas?.nome?.length || 0) > 14 ? '…' : ''}
+                        </div>
+                        <div style={{ fontSize:9, color:'#64748b', marginTop:1 }}>
+                          {g.temas?.tema_especifico?.slice(0,20)}{(g.temas?.tema_especifico?.length || 0) > 20 ? '…' : ''}
+                        </div>
+                        <div style={{ display:'flex', gap:3, marginTop:4, flexWrap:'wrap' }}>
+                          {g.status === 'proposta' && isCoordinator && (
+                            <>
+                              <button onClick={() => updateStatus(g.id, 'aprovada')} style={{ fontSize:8, background:'rgba(96,165,250,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#60a5fa', cursor:'pointer', fontWeight:700 }}>✓</button>
+                              <button onClick={() => updateStatus(g.id, 'cancelada')} style={{ fontSize:8, background:'rgba(248,113,113,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#f87171', cursor:'pointer', fontWeight:700 }}>✕</button>
+                            </>
+                          )}
+                          {g.status === 'aprovada' && (
+                            <button onClick={() => updateStatus(g.id, 'concluida')} style={{ fontSize:8, background:'rgba(74,222,128,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#4ade80', cursor:'pointer', fontWeight:700 }}>✓ Done</button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              })}
+            </div>
+          ))}
+
+          {/* Legend */}
+          <div style={{ display:'flex', gap:16, marginTop:12, paddingTop:12, borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+            {Object.entries(STATUS_COLOR).map(([k, v]) => (
+              <div key={k} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'#64748b' }}>
+                <span style={{ width:8, height:8, borderRadius:2, background:v, display:'inline-block' }} />
+                {k.charAt(0).toUpperCase() + k.slice(1)}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
             <span style={{ fontSize:13, fontWeight:600, color:'#cbd5e1' }}>Progresso Total</span>
             <span style={{ fontSize:13, color:'#a78bfa', fontWeight:700 }}>{progressoGeral}%</span>
@@ -159,6 +305,7 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Search + Grid */}
         <div style={{ marginBottom:20 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍  Buscar disciplina..."
             style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 14px', color:'#e2e8f0', fontSize:13, outline:'none', width:300 }} />
