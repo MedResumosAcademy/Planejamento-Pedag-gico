@@ -24,11 +24,15 @@ export async function middleware(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const { pathname } = request.nextUrl
 
-  if (pathname.startsWith('/login')) {
-    if (user) return NextResponse.redirect(new URL('/', request.url))
+  // Public routes — no auth required
+  if (pathname.startsWith('/login') || pathname.startsWith('/cadastro')) {
+    if (user && pathname.startsWith('/login')) {
+      return NextResponse.redirect(new URL('/', request.url))
+    }
     return supabaseResponse
   }
 
+  // Protected routes
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
