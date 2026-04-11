@@ -2,6 +2,8 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 interface DiscStats {
   id: number; nome: string; cor: string; microassunto: string | null
@@ -10,18 +12,32 @@ interface DiscStats {
 }
 
 export default function Dashboard() {
+  const router = useRouter()
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
   const [loading, setLoading] = useState(true)
   const [busca, setBusca] = useState('')
+  const [nivel, setNivel] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: colab } = await supabase.from('colaboradores').select('nivel').eq('id', user.id).single()
+      setNivel(colab?.nivel || null)
+    }
     const r = await fetch('/api/disciplines')
     setDisciplinas(await r.json())
     setLoading(false)
   }, [])
 
   useEffect(() => { load() }, [load])
+
+  async function handleLogout() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   const filtered = disciplinas.filter(d =>
     d.nome.toLowerCase().includes(busca.toLowerCase())
@@ -33,9 +49,15 @@ export default function Dashboard() {
   const totalPaginas = disciplinas.reduce((a, d) => a + (d.paginas_totais || 0), 0)
   const progressoGeral = totalTemas > 0 ? Math.round(totalConcluidos * 100 / totalTemas) : 0
 
+  const navItems = [
+    { href:'/', label:'Dashboard', icon:'📊' },
+    { href:'/disciplinas', label:'Disciplinas', icon:'📚' },
+    { href:'/kanban', label:'Kanban', icon:'🗂️' },
+    ...(nivel === 'coordenador' ? [{ href:'/admin/colaboradores', label:'Collaborators', icon:'👥' }] : [])
+  ]
+
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0a0d14' }}>
-      {/* Sidebar */}
       <div style={{ width:220, background:'rgba(255,255,255,0.02)', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0 }}>
         <div style={{ padding:'24px 20px', borderBottom:'1px solid rgba(255,255,255,0.06)' }}>
           <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -46,8 +68,8 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
-        <nav style={{ padding:'12px 8px' }}>
-          {[{href:'/',label:'Dashboard',icon:'📊'},{href:'/disciplinas',label:'Disciplinas',icon:'📚'},{href:'/kanban',label:'Kanban',icon:'🗂️'}].map(item => (
+        <nav style={{ padding:'12px 8px', flex:1 }}>
+          {navItems.map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration:'none' }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color: item.href==='/' ? '#a78bfa' : '#64748b', background: item.href==='/' ? 'rgba(167,139,250,0.1)' : 'transparent', fontSize:13, fontWeight:500, marginBottom:2, cursor:'pointer' }}>
                 <span>{item.icon}</span>{item.label}
@@ -55,19 +77,22 @@ export default function Dashboard() {
             </Link>
           ))}
         </nav>
-        <div style={{ marginTop:'auto', padding:'16px 20px', borderTop:'1px solid rgba(255,255,255,0.06)', fontSize:11, color:'#475569' }}>
+        <div style={{ padding:'16px 8px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+          <button onClick={handleLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color:'#64748b', background:'transparent', border:'none', fontSize:13, fontWeight:500, cursor:'pointer', textAlign:'left' }}>
+            <span>🚪</span> Sign Out
+          </button>
+        </div>
+        <div style={{ padding:'0 20px 16px', fontSize:11, color:'#475569' }}>
           258 temas · 18 disciplinas<br/>~2.136 páginas
         </div>
       </div>
 
-      {/* Main */}
       <div style={{ marginLeft:220, flex:1, padding:'32px 40px' }}>
         <div style={{ marginBottom:32 }}>
           <h1 style={{ fontSize:28, fontWeight:700, color:'#f1f5f9', letterSpacing:'-0.5px' }}>Dashboard de Produção</h1>
           <p style={{ color:'#64748b', fontSize:14, marginTop:6 }}>Ciclo Básico de Medicina 2026</p>
         </div>
 
-        {/* KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:32 }}>
           {[
             { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#a78bfa' },
@@ -83,7 +108,6 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Barra geral */}
         <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:32 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
             <span style={{ fontSize:13, fontWeight:600, color:'#cbd5e1' }}>Progresso Total</span>
@@ -102,12 +126,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Busca */}
         <div style={{ marginBottom:20 }}>
-          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍  Buscar disciplina..." style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 14px', color:'#e2e8f0', fontSize:13, outline:'none', width:300 }} />
+          <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍  Buscar disciplina..."
+            style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 14px', color:'#e2e8f0', fontSize:13, outline:'none', width:300 }} />
         </div>
 
-        {/* Grid */}
         {loading ? (
           <div style={{ textAlign:'center', padding:60, color:'#475569' }}>Carregando...</div>
         ) : (
