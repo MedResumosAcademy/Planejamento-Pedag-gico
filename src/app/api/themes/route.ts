@@ -1,68 +1,73 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDB, saveDB } from '@/lib/db'
+import { getDisciplinas, getTemas, updateTema, type Status } from '@/lib/db'
 
 export async function GET(req: NextRequest) {
-  const db = getDB()
   const { searchParams } = new URL(req.url)
   const discId = searchParams.get('disciplina_id')
   const search = searchParams.get('search')
   const status = searchParams.get('status')
 
-  let temas = db.temas.map(t => ({
+  const [disciplinas, temas] = await Promise.all([
+    getDisciplinas(),
+    getTemas({
+      disciplina_id: discId ? Number(discId) : undefined,
+      status: status ?? undefined,
+      search: search ?? undefined,
+    }),
+  ])
+
+  const result = temas.map(t => ({
     ...t,
-    disciplina_nome: db.disciplinas.find(d => d.id === t.disciplina_id)?.nome ?? '',
-    disciplina_cor: db.disciplinas.find(d => d.id === t.disciplina_id)?.cor ?? '#888',
+    disciplina_nome: disciplinas.find(d => d.id === t.disciplina_id)?.nome ?? '',
+    disciplina_cor: disciplinas.find(d => d.id === t.disciplina_id)?.cor ?? '#888',
   }))
 
-  if (discId) temas = temas.filter(t => t.disciplina_id === Number(discId))
-  if (status) temas = temas.filter(t => t.status_geral === status)
-  if (search) temas = temas.filter(t => t.tema_especifico.toLowerCase().includes(search.toLowerCase()))
-
-  return NextResponse.json(temas)
+  return NextResponse.json(result)
 }
 
 export async function PATCH(req: NextRequest) {
-  const db = getDB()
   const body = await req.json()
   const { id, campo, valor, responsavel, observacoes } = body
 
-  const idx = db.temas.findIndex(t => t.id === id)
-  if (idx === -1) return NextResponse.json({ error: 'not found' }, { status: 404 })
-
-  const t = { ...db.temas[idx] }
+  const temas = await getTemas()
+  const tema = temas.find(t => t.id === id)
+  if (!tema) return NextResponse.json({ error: 'not found' }, { status: 404 })
 
   const CAMPOS = [
-    'mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia',
-    'vid_slide','vid_gravacao','vid_edicao',
-    'comp_simulado','comp_questoes','comp_flashcards'
+    'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
+    'vid_slide', 'vid_gravacao', 'vid_edicao',
+    'comp_simulado', 'comp_questoes', 'comp_flashcards',
   ]
 
-  if (campo && CAMPOS.includes(campo)) (t as any)[campo] = valor
-  if (responsavel !== undefined) t.responsavel = responsavel
-  if (observacoes !== undefined) t.observacoes = observacoes
+  const updates: Record<string, unknown> = {}
+
+  if (campo && CAMPOS.includes(campo)) updates[campo] = valor
+  if (responsavel !== undefined) updates.responsavel = responsavel
+  if (observacoes !== undefined) updates.observacoes = observacoes
 
   // Automações
+  const t = { ...tema, ...updates }
   if (campo === 'mat_diagramado' && valor === 'concluido' && t.mat_conferencia === 'pendente')
-    t.mat_conferencia = 'em_andamento'
+    updates.mat_conferencia = 'em_andamento'
   if (campo === 'mat_conferencia' && valor === 'concluido' && t.vid_slide === 'pendente')
-    t.vid_slide = 'em_andamento'
+    updates.vid_slide = 'em_andamento'
   if (campo === 'vid_gravacao' && valor === 'concluido' && t.vid_edicao === 'pendente')
-    t.vid_edicao = 'em_andamento'
+    updates.vid_edicao = 'em_andamento'
 
-  // Recalcula status geral
-  const etapas = [
-    t.mat_atualizado, t.mat_revisado, t.mat_diagramado, t.mat_conferencia,
-    t.vid_slide, t.vid_gravacao, t.vid_edicao,
-    t.comp_simulado, t.comp_questoes, t.comp_flashcards
+  // Recalcula status_geral
+  const merged = { ...t, ...updates }
+  const etapas: Status[] = [
+    merged.mat_atualizado, merged.mat_revisado, merged.mat_diagramado, merged.mat_conferencia,
+    merged.vid_slide, merged.vid_gravacao, merged.vid_edicao,
+    merged.comp_simulado, merged.comp_questoes, merged.comp_flashcards,
   ]
   const allDone = etapas.every(s => s === 'concluido')
   const anyStarted = etapas.some(s => s !== 'pendente')
-  t.status_geral = allDone ? 'concluido' : anyStarted ? 'em_andamento' : 'pendente'
-  t.updated_at = new Date().toISOString()
+  updates.status_geral = allDone ? 'concluido' : anyStarted ? 'em_andamento' : 'pendente'
 
-  db.temas[idx] = t
-  saveDB(db)
+  const updated = await updateTema(id, updates as any)
 
-  const disc = db.disciplinas.find(d => d.id === t.disciplina_id)
-  return NextResponse.json({ ...t, disciplina_nome: disc?.nome, disciplina_cor: disc?.cor })
+  const disciplinas = await getDisciplinas()
+  const disc = disciplinas.find(d => d.id === updated.disciplina_id)
+  return NextResponse.json({ ...updated, disciplina_nome: disc?.nome, disciplina_cor: disc?.cor })
 }
