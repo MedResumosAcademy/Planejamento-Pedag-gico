@@ -138,7 +138,7 @@ export default function ProfessorProfilePage() {
               <h3 style={{ fontSize:13, fontWeight:600, color:'#64748b', textTransform:'uppercase', letterSpacing:'0.5px', marginBottom:14 }}>Disciplines</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {temas.length === 0 ? <div style={{ color:'#475569', fontSize:13 }}>No disciplines assigned.</div> :
-                  [...new Map(temas.map(t => [t.disciplinas?.nome, t])).values()].map(t => {
+                  Array.from(new Map(temas.map(t => [t.disciplinas?.nome, t])).values()).map(t => {
                     const discTemas = temas.filter(tt => tt.disciplinas?.nome === t.disciplinas?.nome)
                     const done = discTemas.filter(tt => tt.status_geral === 'concluido').length
                     const pct = discTemas.length > 0 ? Math.round(done * 100 / discTemas.length) : 0
