@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server'
 import { getDisciplinas, getTemas } from '@/lib/db'
 
+const ALL_SUB_STATUS = [
+  'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
+  'vid_envio_tema', 'vid_slide_pronto', 'vid_diagramacao', 'vid_aprovacao_slide',
+  'vid_agendamento', 'vid_gravacao_feita', 'vid_aprovacao_aula', 'vid_publicada',
+  'comp_simulado', 'comp_questoes', 'comp_flashcards',
+]
+
 export async function GET() {
   const [disciplinas, temas] = await Promise.all([getDisciplinas(), getTemas()])
 
@@ -10,24 +17,14 @@ export async function GET() {
     const em_andamento = dt.filter(t => t.status_geral === 'em_andamento').length
     const pendentes = dt.filter(t => t.status_geral === 'pendente').length
     const paginas_totais = dt.reduce((a, t) => a + (t.paginas ?? 0), 0)
-    const total_etapas = dt.length * 10
-    const etapas_concluidas = dt.reduce((a, t) => a + [
-      t.mat_atualizado, t.mat_revisado, t.mat_diagramado, t.mat_conferencia,
-      t.vid_slide, t.vid_gravacao, t.vid_edicao,
-      t.comp_simulado, t.comp_questoes, t.comp_flashcards
-    ].filter(s => s === 'concluido').length, 0)
+    const total_etapas = dt.length * ALL_SUB_STATUS.length
+    const etapas_concluidas = dt.reduce((a, t) =>
+      a + ALL_SUB_STATUS.filter(k => (t as any)[k] === 'concluido').length, 0
+    )
     const progresso_geral = total_etapas > 0
       ? Math.round(etapas_concluidas * 100 / total_etapas)
       : 0
-    return {
-      ...d,
-      total_temas: dt.length,
-      concluidos,
-      em_andamento,
-      pendentes,
-      paginas_totais,
-      progresso_geral,
-    }
+    return { ...d, total_temas: dt.length, concluidos, em_andamento, pendentes, paginas_totais, progresso_geral }
   })
 
   return NextResponse.json(result)
