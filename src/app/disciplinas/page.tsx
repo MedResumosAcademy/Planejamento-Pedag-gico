@@ -14,15 +14,55 @@ interface Tema {
   ordem:number; tema_especifico:string; paginas:number|null; questoes_previstas:number|null
   responsavel:string|null; observacoes:string|null; status_geral:Status
   mat_atualizado:Status; mat_revisado:Status; mat_diagramado:Status; mat_conferencia:Status
-  vid_slide:Status; vid_gravacao:Status; vid_edicao:Status
+  vid_envio_tema:Status; vid_slide_pronto:Status; vid_diagramacao:Status; vid_aprovacao_slide:Status
+  vid_agendamento:Status; vid_gravacao_feita:Status; vid_aprovacao_aula:Status; vid_publicada:Status
   comp_simulado:Status; comp_questoes:Status; comp_flashcards:Status
 }
 interface Disc { id:number; nome:string; cor:string; microassunto:string|null; total_temas:number; concluidos:number; em_andamento:number; pendentes:number; paginas_totais:number; progresso_geral:number }
 
 const GRUPOS = [
-  { key:'mat', label:'Materiais', color:'#16a34a', campos:[{k:'mat_atualizado',l:'Atualizado'},{k:'mat_revisado',l:'Revisado'},{k:'mat_diagramado',l:'Diagramado'},{k:'mat_conferencia',l:'Conferência'}] },
-  { key:'vid', label:'Vídeo', color:'#2563eb', campos:[{k:'vid_slide',l:'Slide'},{k:'vid_gravacao',l:'Gravação'},{k:'vid_edicao',l:'Edição'}] },
-  { key:'comp', label:'Complementos', color:'#d97706', campos:[{k:'comp_simulado',l:'Simulado'},{k:'comp_questoes',l:'Questões'},{k:'comp_flashcards',l:'Flashcards'}] },
+  {
+    key:'mat', label:'Materiais', color:'#16a34a',
+    campos:[
+      {k:'mat_atualizado',l:'Atualizado'},
+      {k:'mat_revisado',l:'Revisado'},
+      {k:'mat_diagramado',l:'Diagramado'},
+      {k:'mat_conferencia',l:'Conferência'},
+    ]
+  },
+  {
+    key:'vid', label:'Vídeo', color:'#2563eb',
+    campos:[
+      {k:'vid_envio_tema',l:'Envio do Tema'},
+      {k:'vid_slide_pronto',l:'Slide Pronto'},
+      {k:'vid_diagramacao',l:'Diagramação'},
+      {k:'vid_aprovacao_slide',l:'Aprovação Slide'},
+      {k:'vid_agendamento',l:'Agendamento'},
+      {k:'vid_gravacao_feita',l:'Gravação'},
+      {k:'vid_aprovacao_aula',l:'Aprovação Aula'},
+      {k:'vid_publicada',l:'Publicada'},
+    ]
+  },
+  {
+    key:'comp', label:'Complementos', color:'#d97706',
+    campos:[
+      {k:'comp_simulado',l:'Simulado'},
+      {k:'comp_questoes',l:'Questões'},
+      {k:'comp_flashcards',l:'Flashcards'},
+    ]
+  },
+]
+
+// Step indicators for video workflow
+const VID_STEPS = [
+  { k:'vid_envio_tema', l:'Enviar tema', icon:'📨' },
+  { k:'vid_slide_pronto', l:'Slide pronto', icon:'📊' },
+  { k:'vid_diagramacao', l:'Diagramação', icon:'🎨' },
+  { k:'vid_aprovacao_slide', l:'Aprovação slide', icon:'✅' },
+  { k:'vid_agendamento', l:'Agendar aula', icon:'📅' },
+  { k:'vid_gravacao_feita', l:'Gravação', icon:'🎥' },
+  { k:'vid_aprovacao_aula', l:'Aprovação aula', icon:'👍' },
+  { k:'vid_publicada', l:'No sistema', icon:'🚀' },
 ]
 
 function Inner() {
@@ -56,7 +96,10 @@ function Inner() {
   }
 
   const selectedDisc = disciplinas.find(d => d.id === selectedId)
-  const filtered = temas.filter(t => t.tema_especifico.toLowerCase().includes(busca.toLowerCase()) && (!filtroStatus || t.status_geral===filtroStatus))
+  const filtered = temas.filter(t =>
+    t.tema_especifico.toLowerCase().includes(busca.toLowerCase()) &&
+    (!filtroStatus || t.status_geral===filtroStatus)
+  )
 
   return (
     <div style={{ display:'flex', minHeight:'100vh', background:'#0a0d14' }}>
@@ -134,25 +177,78 @@ function Inner() {
 
                   {isOpen && (
                     <div style={{ padding:'0 18px 18px', borderTop:'1px solid rgba(255,255,255,0.05)' }}>
-                      <div style={{ paddingTop:16, display:'flex', flexDirection:'column', gap:16 }}>
-                        {GRUPOS.map(g => (
-                          <div key={g.key}>
-                            <div style={{ fontSize:11, fontWeight:700, color:g.color, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>{g.label}</div>
-                            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                              {g.campos.map(c => {
-                                const s = (t as any)[c.k] as Status
-                                return (
-                                  <div key={c.k} style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'center' }}>
-                                    <span style={{ fontSize:11, color:'#64748b' }}>{c.l}</span>
-                                    <button onClick={()=>toggle(t,c.k)} style={{ background:SBG[s], border:`1px solid ${SCOLOR[s]}40`, borderRadius:6, padding:'3px 10px', fontSize:11, color:SCOLOR[s], cursor:'pointer', fontWeight:500, fontFamily:'inherit' }}>
-                                      {s==='concluido'?'✓':s==='em_andamento'?'◐':'○'} {SLABEL[s]}
-                                    </button>
-                                  </div>
-                                )
-                              })}
-                            </div>
+                      <div style={{ paddingTop:16, display:'flex', flexDirection:'column', gap:20 }}>
+
+                        {/* Materiais */}
+                        <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'#16a34a', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Materiais</div>
+                          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                            {GRUPOS[0].campos.map(c => {
+                              const s = (t as any)[c.k] as Status
+                              return (
+                                <div key={c.k} style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'center' }}>
+                                  <span style={{ fontSize:11, color:'#64748b' }}>{c.l}</span>
+                                  <button onClick={()=>toggle(t,c.k)} style={{ background:SBG[s], border:`1px solid ${SCOLOR[s]}40`, borderRadius:6, padding:'3px 10px', fontSize:11, color:SCOLOR[s], cursor:'pointer', fontWeight:500, fontFamily:'inherit' }}>
+                                    {s==='concluido'?'✓':s==='em_andamento'?'◐':'○'} {SLABEL[s]}
+                                  </button>
+                                </div>
+                              )
+                            })}
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Vídeo — workflow sequencial */}
+                        <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>Vídeo</div>
+                          <div style={{ display:'flex', alignItems:'flex-start', gap:0, overflowX:'auto', paddingBottom:8 }}>
+                            {VID_STEPS.map((step, idx) => {
+                              const s = (t as any)[step.k] as Status
+                              const isDone = s === 'concluido'
+                              const isInProgress = s === 'em_andamento'
+                              return (
+                                <div key={step.k} style={{ display:'flex', alignItems:'center' }}>
+                                  <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6, minWidth:80 }}>
+                                    <button onClick={()=>toggle(t,step.k)}
+                                      style={{
+                                        width:40, height:40, borderRadius:'50%', border:'2px solid',
+                                        borderColor: isDone ? '#4ade80' : isInProgress ? '#fbbf24' : 'rgba(255,255,255,0.1)',
+                                        background: isDone ? 'rgba(74,222,128,0.2)' : isInProgress ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.03)',
+                                        color: isDone ? '#4ade80' : isInProgress ? '#fbbf24' : '#475569',
+                                        fontSize:16, cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center',
+                                        transition:'all 0.2s', fontFamily:'inherit'
+                                      }}>
+                                      {isDone ? '✓' : step.icon}
+                                    </button>
+                                    <span style={{ fontSize:9, color: isDone ? '#4ade80' : isInProgress ? '#fbbf24' : '#475569', textAlign:'center', lineHeight:1.3, maxWidth:72, fontWeight: isDone || isInProgress ? 600 : 400 }}>{step.l}</span>
+                                  </div>
+                                  {idx < VID_STEPS.length - 1 && (
+                                    <div style={{ width:24, height:2, background: isDone ? '#4ade80' : 'rgba(255,255,255,0.08)', flexShrink:0, marginBottom:20 }} />
+                                  )}
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Complementos */}
+                        <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'#d97706', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Complementos</div>
+                          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                            {GRUPOS[2].campos.map(c => {
+                              const s = (t as any)[c.k] as Status
+                              return (
+                                <div key={c.k} style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'center' }}>
+                                  <span style={{ fontSize:11, color:'#64748b' }}>{c.l}</span>
+                                  <button onClick={()=>toggle(t,c.k)} style={{ background:SBG[s], border:`1px solid ${SCOLOR[s]}40`, borderRadius:6, padding:'3px 10px', fontSize:11, color:SCOLOR[s], cursor:'pointer', fontWeight:500, fontFamily:'inherit' }}>
+                                    {s==='concluido'?'✓':s==='em_andamento'?'◐':'○'} {SLABEL[s]}
+                                  </button>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+
+                        {/* Info */}
                         <div style={{ display:'flex', gap:16, paddingTop:8, borderTop:'1px solid rgba(255,255,255,0.05)', flexWrap:'wrap' }}>
                           {t.paginas && <span style={{ fontSize:12, color:'#64748b' }}>📄 {t.paginas} páginas</span>}
                           {t.questoes_previstas && <span style={{ fontSize:12, color:'#64748b' }}>❓ {t.questoes_previstas} questões</span>}
