@@ -1,73 +1,54 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getDisciplinas, getTemas, updateTema, type Status } from '@/lib/db'
+import { NextResponse } from 'next/server'
+import { getDisciplinas, getTemas, updateTema } from '@/lib/db'
 
-export async function GET(req: NextRequest) {
+const VALID_CAMPOS = new Set([
+  'mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia',
+  'vid_envio_tema','vid_slide_pronto','vid_diagramacao','vid_aprovacao_slide',
+  'vid_agendamento','vid_gravacao_feita','vid_aprovacao_aula','vid_publicada',
+  'comp_simulado','comp_questoes','comp_flashcards',
+  'status_geral','paginas','questoes_previstas','responsavel','observacoes',
+])
+
+const VALID_STATUS = new Set(['pendente','em_andamento','concluido'])
+
+export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
-  const discId = searchParams.get('disciplina_id')
-  const search = searchParams.get('search')
-  const status = searchParams.get('status')
-
-  const [disciplinas, temas] = await Promise.all([
-    getDisciplinas(),
-    getTemas({
-      disciplina_id: discId ? Number(discId) : undefined,
-      status: status ?? undefined,
-      search: search ?? undefined,
-    }),
-  ])
-
-  const result = temas.map(t => ({
-    ...t,
-    disciplina_nome: disciplinas.find(d => d.id === t.disciplina_id)?.nome ?? '',
-    disciplina_cor: disciplinas.find(d => d.id === t.disciplina_id)?.cor ?? '#888',
-  }))
-
-  return NextResponse.json(result)
+  const disciplina_id = searchParams.get('disciplina_id')
+  const temas = await getTemas(disciplina_id ? { disciplina_id: Number(disciplina_id) } : undefined)
+  return NextResponse.json(temas)
 }
 
-export async function PATCH(req: NextRequest) {
-  const body = await req.json()
-  const { id, campo, valor, responsavel, observacoes } = body
+export async function PATCH(req: Request) {
+  const { id, campo, valor } = await req.json()
 
-  const temas = await getTemas()
-  const tema = temas.find(t => t.id === id)
-  if (!tema) return NextResponse.json({ error: 'not found' }, { status: 404 })
+  if (!id || !campo || valor === undefined) {
+    return NextResponse.json({ error: 'Missing required fields: id, campo, valor' }, { status: 400 })
+  }
 
-  const CAMPOS = [
-    'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
-    'vid_slide', 'vid_gravacao', 'vid_edicao',
-    'comp_simulado', 'comp_questoes', 'comp_flashcards',
-  ]
+  if (!VALID_CAMPOS.has(campo)) {
+    return NextResponse.json({ error: `Invalid field: ${campo}` }, { status: 400 })
+  }
 
-  const updates: Record<string, unknown> = {}
+  if (VALID_STATUS.size > 0 && typeof valor === 'string' && campo !== 'responsavel' && campo !== 'observacoes') {
+    if (!VALID_STATUS.has(valor) && typeof valor !== 'number') {
+      return NextResponse.json({ error: `Invalid status value: ${valor}` }, { status: 400 })
+    }
+  }
 
-  if (campo && CAMPOS.includes(campo)) updates[campo] = valor
-  if (responsavel !== undefined) updates.responsavel = responsavel
-  if (observacoes !== undefined) updates.observacoes = observacoes
+  // Auto-advance status_geral based on video workflow
+  const VID_FIELDS = ['vid_envio_tema','vid_slide_pronto','vid_diagramacao','vid_aprovacao_slide','vid_agendamento','vid_gravacao_feita','vid_aprovacao_aula','vid_publicada']
+  const MAT_FIELDS = ['mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia']
 
-  // Automações
-  const t = { ...tema, ...updates }
-  if (campo === 'mat_diagramado' && valor === 'concluido' && t.mat_conferencia === 'pendente')
-    updates.mat_conferencia = 'em_andamento'
-  if (campo === 'mat_conferencia' && valor === 'concluido' && t.vid_slide === 'pendente')
-    updates.vid_slide = 'em_andamento'
-  if (campo === 'vid_gravacao' && valor === 'concluido' && t.vid_edicao === 'pendente')
-    updates.vid_edicao = 'em_andamento'
+  let extraUpdates: Record<string,string> = {}
 
-  // Recalcula status_geral
-  const merged = { ...t, ...updates }
-  const etapas: Status[] = [
-    merged.mat_atualizado, merged.mat_revisado, merged.mat_diagramado, merged.mat_conferencia,
-    merged.vid_slide, merged.vid_gravacao, merged.vid_edicao,
-    merged.comp_simulado, merged.comp_questoes, merged.comp_flashcards,
-  ]
-  const allDone = etapas.every(s => s === 'concluido')
-  const anyStarted = etapas.some(s => s !== 'pendente')
-  updates.status_geral = allDone ? 'concluido' : anyStarted ? 'em_andamento' : 'pendente'
+  // Auto-advance next step in video sequence when one is concluded
+  if (VID_FIELDS.includes(campo) && valor === 'concluido') {
+    const idx = VID_FIELDS.indexOf(campo)
+    if (idx < VID_FIELDS.length - 1) {
+      extraUpdates[VID_FIELDS[idx + 1]] = 'em_andamento'
+    }
+  }
 
-  const updated = await updateTema(id, updates as any)
-
-  const disciplinas = await getDisciplinas()
-  const disc = disciplinas.find(d => d.id === updated.disciplina_id)
-  return NextResponse.json({ ...updated, disciplina_nome: disc?.nome, disciplina_cor: disc?.cor })
+  const tema = await updateTema(id, { [campo]: valor, ...extraUpdates })
+  return NextResponse.json(tema)
 }
