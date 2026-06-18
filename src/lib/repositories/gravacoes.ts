@@ -39,6 +39,19 @@ export async function createGravacao(payload: {
   return data
 }
 
+// Recordings within an explicit datetime range (used by the management dashboard).
+export async function getGravacoesRange(startDate: string, endDate: string): Promise<Gravacao[]> {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from('gravacoes')
+    .select('*, colaboradores(nome), disciplinas(nome, cor), temas(tema_especifico)')
+    .gte('data_hora', startDate)
+    .lte('data_hora', endDate + 'T23:59:59')
+    .order('data_hora')
+  if (error) throw error
+  return data || []
+}
+
 export async function updateGravacao(id: number, updates: {
   status?: RecordingStatus; gravada?: boolean; cancelada?: boolean
   motivo_cancelamento?: string | null; observacoes?: string | null

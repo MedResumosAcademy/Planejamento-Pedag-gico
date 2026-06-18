@@ -21,9 +21,9 @@ const ESTEIRAS = [
 ]
 
 const COLS: { key:Status; label:string; color:string }[] = [
-  { key:'pendente', label:'Pendente', color:'#475569' },
-  { key:'em_andamento', label:'Em Andamento', color:'#fbbf24' },
-  { key:'concluido', label:'Concluído', color:'#4ade80' },
+  { key:'pendente', label:'Pendente', color:'#94a3b8' },
+  { key:'em_andamento', label:'Em Andamento', color:'#d97706' },
+  { key:'concluido', label:'Concluído', color:'#16a34a' },
 ]
 
 function getEsteiraStatus(t: Tema, campos: string[]): Status {
@@ -65,20 +65,20 @@ export default function KanbanPage() {
   }
 
   return (
-    <div style={{ minHeight:'100vh', background:'#0a0d14' }}>
+    <div style={{ minHeight:'100vh', background:'#f4f6fb' }}>
       {/* Header */}
-      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(10,13,20,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(255,255,255,0.06)', padding:'14px 32px', display:'flex', alignItems:'center', gap:16 }}>
+      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(10,13,20,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'14px 32px', display:'flex', alignItems:'center', gap:16 }}>
         <Link href="/" style={{ textDecoration:'none', color:'#64748b', fontSize:13 }}>← Dashboard</Link>
-        <div style={{ width:1, height:20, background:'rgba(255,255,255,0.1)' }} />
-        <h1 style={{ fontSize:18, fontWeight:700, color:'#f1f5f9', margin:0 }}>Kanban</h1>
+        <div style={{ width:1, height:20, background:'rgba(0,0,0,0.1)' }} />
+        <h1 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:0 }}>Kanban</h1>
         <div style={{ display:'flex', gap:8, marginLeft:16 }}>
           {ESTEIRAS.map(ex => (
-            <button key={ex.key} onClick={()=>setEsteira(ex.key)} style={{ padding:'7px 16px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit', fontWeight:600, background:esteira===ex.key?`${ex.color}20`:'rgba(255,255,255,0.04)', border:esteira===ex.key?`1px solid ${ex.color}60`:'1px solid rgba(255,255,255,0.08)', color:esteira===ex.key?ex.color:'#64748b', transition:'all 0.15s' }}>
+            <button key={ex.key} onClick={()=>setEsteira(ex.key)} style={{ padding:'7px 16px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit', fontWeight:600, background:esteira===ex.key?`${ex.color}20`:'rgba(0,0,0,0.04)', border:esteira===ex.key?`1px solid ${ex.color}60`:'1px solid rgba(0,0,0,0.08)', color:esteira===ex.key?ex.color:'#64748b', transition:'all 0.15s' }}>
               {ex.label}
             </button>
           ))}
         </div>
-        <div style={{ marginLeft:'auto', fontSize:13, color:'#475569' }}>{loading?'Carregando...':`${temas.length} temas`}</div>
+        <div style={{ marginLeft:'auto', fontSize:13, color:'#94a3b8' }}>{loading?'Carregando...':`${temas.length} temas`}</div>
       </div>
 
       <div style={{ padding:'24px 32px' }}>
@@ -101,9 +101,9 @@ export default function KanbanPage() {
               style={{ minHeight:400 }}
             >
               {/* Col header */}
-              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background: dragOver===col.key?`${col.color}15`:'rgba(255,255,255,0.03)', border:`1px solid ${dragOver===col.key?col.color+'40':'rgba(255,255,255,0.06)'}`, borderRadius:10, marginBottom:12, transition:'all 0.15s' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8, padding:'10px 14px', background: dragOver===col.key?`${col.color}15`:'rgba(0,0,0,0.03)', border:`1px solid ${dragOver===col.key?col.color+'40':'rgba(0,0,0,0.06)'}`, borderRadius:10, marginBottom:12, transition:'all 0.15s' }}>
                 <span style={{ width:10, height:10, borderRadius:'50%', background:col.color }} />
-                <span style={{ fontSize:13, fontWeight:600, color:'#cbd5e1', flex:1 }}>{col.label}</span>
+                <span style={{ fontSize:13, fontWeight:600, color:'#334155', flex:1 }}>{col.label}</span>
                 <span style={{ fontSize:12, fontWeight:700, background:`${col.color}20`, color:col.color, border:`1px solid ${col.color}30`, borderRadius:20, padding:'2px 8px' }}>{cols[col.key].length}</span>
               </div>
 
@@ -113,21 +113,21 @@ export default function KanbanPage() {
                   draggable
                   onDragStart={()=>setDragId(t.id)}
                   onDragEnd={()=>setDragId(null)}
-                  style={{ background:dragId===t.id?'rgba(255,255,255,0.08)':'rgba(255,255,255,0.04)', border:`1px solid ${t.disciplina_cor}30`, borderLeft:`3px solid ${t.disciplina_cor}`, borderRadius:10, padding:'12px 14px', cursor:'grab', marginBottom:8, opacity:dragId===t.id?0.5:1, transition:'opacity 0.15s' }}
+                  style={{ background:dragId===t.id?'rgba(0,0,0,0.08)':'rgba(0,0,0,0.04)', border:`1px solid ${t.disciplina_cor}30`, borderLeft:`3px solid ${t.disciplina_cor}`, borderRadius:10, padding:'12px 14px', cursor:'grab', marginBottom:8, opacity:dragId===t.id?0.5:1, transition:'opacity 0.15s' }}
                 >
                   <div style={{ fontSize:11, color:'#64748b', marginBottom:4 }}>{t.disciplina_nome}</div>
-                  <div style={{ fontSize:13, fontWeight:600, color:'#e2e8f0', marginBottom:8, lineHeight:1.4 }}>{t.tema_especifico}</div>
+                  <div style={{ fontSize:13, fontWeight:600, color:'#1e293b', marginBottom:8, lineHeight:1.4 }}>{t.tema_especifico}</div>
                   <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                    <div style={{ fontSize:11, color:'#475569' }}>
+                    <div style={{ fontSize:11, color:'#94a3b8' }}>
                       {e.campos.filter(c=>(t as any)[c]==='concluido').length}/{e.campos.length} etapas
                     </div>
-                    {t.paginas && <div style={{ fontSize:11, color:'#60a5fa' }}>{t.paginas}p</div>}
+                    {t.paginas && <div style={{ fontSize:11, color:'#2563eb' }}>{t.paginas}p</div>}
                   </div>
                 </div>
               ))}
 
               {cols[col.key].length===0 && (
-                <div style={{ border:'2px dashed rgba(255,255,255,0.06)', borderRadius:10, padding:'40px 20px', textAlign:'center', color:'#334155', fontSize:13 }}>
+                <div style={{ border:'2px dashed rgba(0,0,0,0.06)', borderRadius:10, padding:'40px 20px', textAlign:'center', color:'#334155', fontSize:13 }}>
                   Arraste cards aqui
                 </div>
               )}

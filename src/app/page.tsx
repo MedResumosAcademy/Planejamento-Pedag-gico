@@ -1,9 +1,10 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import GerencialDashboard from '@/components/GerencialDashboard'
 
 interface DiscStats {
   id: number; nome: string; cor: string; microassunto: string | null
@@ -21,7 +22,7 @@ interface UserInfo { id: string; nivel: string; nome: string }
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const STATUS_COLOR: Record<string, string> = {
-  proposta: '#fbbf24', aprovada: '#60a5fa', concluida: '#4ade80', cancelada: '#f87171'
+  proposta: '#d97706', aprovada: '#2563eb', concluida: '#16a34a', cancelada: '#dc2626'
 }
 
 function getWeekDates() {
@@ -43,8 +44,10 @@ function getPeriod(hora: string): 'manha' | 'tarde' | 'noite' {
   return 'noite'
 }
 
-export default function Dashboard() {
+function DashboardInner() {
   const router = useRouter()
+  const sp = useSearchParams()
+  const view: 'macro' | 'gerencial' = sp.get('view') === 'gerencial' ? 'gerencial' : 'macro'
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
   const [loading, setLoading] = useState(true)
@@ -129,20 +132,20 @@ export default function Dashboard() {
   ]
 
   return (
-    <div style={{ display:'flex', minHeight:'100vh', background:'#0a0d14' }}>
+    <div style={{ display:'flex', minHeight:'100vh', background:'#f4f6fb' }}>
       {/* Sidebar */}
-      <div style={{ width:SW, background:'rgba(255,255,255,0.02)', borderRight:'1px solid rgba(255,255,255,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0, transition:'width 0.2s ease', overflow:'hidden', zIndex:10 }}>
-        <div style={{ padding:'20px 16px', borderBottom:'1px solid rgba(255,255,255,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:72 }}>
+      <div style={{ width:SW, background:'rgba(0,0,0,0.02)', borderRight:'1px solid rgba(0,0,0,0.06)', display:'flex', flexDirection:'column', position:'fixed', top:0, bottom:0, left:0, transition:'width 0.2s ease', overflow:'hidden', zIndex:10 }}>
+        <div style={{ padding:'20px 16px', borderBottom:'1px solid rgba(0,0,0,0.06)', display:'flex', alignItems:'center', justifyContent:'space-between', minHeight:72 }}>
           {sidebarOpen ? (
             <>
               <div style={{ display:'flex', alignItems:'center', gap:10 }}>
                 <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>M</div>
                 <div>
-                  <div style={{ fontSize:13, fontWeight:700, color:'#e2e8f0', whiteSpace:'nowrap' }}>Med2026</div>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#1e293b', whiteSpace:'nowrap' }}>Med2026</div>
                   <div style={{ fontSize:10, color:'#64748b', whiteSpace:'nowrap' }}>Ciclo Básico</div>
                 </div>
               </div>
-              <button onClick={() => setSidebarOpen(false)} style={{ background:'rgba(255,255,255,0.05)', border:'none', borderRadius:6, padding:'4px 8px', color:'#64748b', cursor:'pointer', fontSize:14 }}>←</button>
+              <button onClick={() => setSidebarOpen(false)} style={{ background:'rgba(0,0,0,0.05)', border:'none', borderRadius:6, padding:'4px 8px', color:'#64748b', cursor:'pointer', fontSize:14 }}>←</button>
             </>
           ) : (
             <div style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:8 }}>
@@ -154,20 +157,20 @@ export default function Dashboard() {
         <nav style={{ padding:'12px 8px', flex:1 }}>
           {navItems.map(item => (
             <Link key={item.href} href={item.href} style={{ textDecoration:'none' }}>
-              <div title={!sidebarOpen ? item.label : ''} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color: item.href==='/' ? '#a78bfa' : '#64748b', background: item.href==='/' ? 'rgba(167,139,250,0.1)' : 'transparent', fontSize:13, fontWeight:500, marginBottom:2, cursor:'pointer', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
+              <div title={!sidebarOpen ? item.label : ''} style={{ display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color: item.href==='/' ? '#7c3aed' : '#64748b', background: item.href==='/' ? 'rgba(167,139,250,0.1)' : 'transparent', fontSize:13, fontWeight:500, marginBottom:2, cursor:'pointer', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
                 <span style={{ flexShrink:0 }}>{item.icon}</span>
                 {sidebarOpen && item.label}
               </div>
             </Link>
           ))}
         </nav>
-        <div style={{ padding:'16px 8px', borderTop:'1px solid rgba(255,255,255,0.06)' }}>
+        <div style={{ padding:'16px 8px', borderTop:'1px solid rgba(0,0,0,0.06)' }}>
           <button onClick={handleLogout} style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'9px 12px', borderRadius:8, color:'#64748b', background:'transparent', border:'none', fontSize:13, cursor:'pointer', justifyContent: sidebarOpen ? 'flex-start' : 'center' }}>
             <span>🚪</span>{sidebarOpen && 'Sign Out'}
           </button>
         </div>
         {sidebarOpen && (
-          <div style={{ padding:'0 20px 16px', fontSize:11, color:'#475569' }}>
+          <div style={{ padding:'0 20px 16px', fontSize:11, color:'#94a3b8' }}>
             {userInfo?.nome && <div style={{ marginBottom:4, color:'#64748b', fontWeight:500, fontSize:12 }}>{userInfo.nome}</div>}
             258 temas · 18 disciplinas<br/>~2.136 páginas
           </div>
@@ -175,9 +178,22 @@ export default function Dashboard() {
       </div>
 
       {/* Main */}
-      <div style={{ marginLeft:SW, flex:1, padding:'32px 40px', transition:'margin-left 0.2s ease' }}>
+      <div style={{ marginLeft:SW, flex:1, transition:'margin-left 0.2s ease' }}>
+        {/* Seletor de visão: Macro | Gerencial */}
+        <div style={{ padding:'20px 40px 0' }}>
+          <div style={{ display:'inline-flex', background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:10, padding:3, gap:3 }}>
+            {([['macro','📊 Macro'],['gerencial','📈 Gerencial']] as const).map(([v,label]) => (
+              <button key={v} onClick={() => router.push(v==='macro' ? '/' : '/?view=gerencial')}
+                style={{ padding:'7px 16px', borderRadius:8, border:'none', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'inherit', background: view===v ? 'rgba(167,139,250,0.18)' : 'transparent', color: view===v ? '#7c3aed' : '#64748b' }}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {view === 'gerencial' ? <GerencialDashboard /> : (
+        <div style={{ padding:'24px 40px 40px' }}>
         <div style={{ marginBottom:28 }}>
-          <h1 style={{ fontSize:28, fontWeight:700, color:'#f1f5f9', letterSpacing:'-0.5px' }}>
+          <h1 style={{ fontSize:28, fontWeight:700, color:'#0f172a', letterSpacing:'-0.5px' }}>
             {isProfessor ? `Olá, ${userInfo?.nome?.split(' ')[0]}! 👋` : 'Dashboard de Produção'}
           </h1>
           <p style={{ color:'#64748b', fontSize:14, marginTop:6 }}>
@@ -188,28 +204,28 @@ export default function Dashboard() {
         {/* KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
           {[
-            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#a78bfa' },
-            { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#fbbf24' },
-            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#4ade80' },
-            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#60a5fa' },
+            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#7c3aed' },
+            { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706' },
+            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a' },
+            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#2563eb' },
           ].map(kpi => (
-            <div key={kpi.label} style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px' }}>
+            <div key={kpi.label} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px' }}>
               <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px' }}>{kpi.label}</div>
               <div style={{ fontSize:32, fontWeight:700, color:kpi.color, lineHeight:1 }}>{kpi.value}</div>
-              <div style={{ fontSize:12, color:'#475569', marginTop:6 }}>{kpi.sub}</div>
+              <div style={{ fontSize:12, color:'#94a3b8', marginTop:6 }}>{kpi.sub}</div>
             </div>
           ))}
         </div>
 
         {/* Weekly Calendar */}
-        <div style={{ background:'rgba(255,255,255,0.02)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
+        <div style={{ background:'rgba(0,0,0,0.02)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
-            <h2 style={{ fontSize:15, fontWeight:700, color:'#e2e8f0', margin:0 }}>📅 Weekly Recording Schedule</h2>
+            <h2 style={{ fontSize:15, fontWeight:700, color:'#1e293b', margin:0 }}>📅 Weekly Recording Schedule</h2>
             <div style={{ display:'flex', gap:8, alignItems:'center' }}>
               <span style={{ fontSize:12, color:'#64748b' }}>
                 {weekDates[0].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })} – {weekDates[6].toLocaleDateString('pt-BR', { day:'2-digit', month:'short' })}
               </span>
-              <Link href="/agenda" style={{ textDecoration:'none', background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:8, padding:'6px 12px', color:'#a78bfa', fontSize:12, fontWeight:600 }}>
+              <Link href="/agenda" style={{ textDecoration:'none', background:'rgba(99,102,241,0.15)', border:'1px solid rgba(99,102,241,0.3)', borderRadius:8, padding:'6px 12px', color:'#7c3aed', fontSize:12, fontWeight:600 }}>
                 Full Agenda →
               </Link>
             </div>
@@ -223,7 +239,7 @@ export default function Dashboard() {
               return (
                 <div key={i} style={{ textAlign:'center', padding:'6px 4px', borderRadius:8, background: isToday ? 'rgba(99,102,241,0.15)' : 'transparent' }}>
                   <div style={{ fontSize:10, color:'#64748b', fontWeight:600 }}>{DAYS[date.getDay()]}</div>
-                  <div style={{ fontSize:16, fontWeight:700, color: isToday ? '#a78bfa' : '#e2e8f0' }}>{date.getDate()}</div>
+                  <div style={{ fontSize:16, fontWeight:700, color: isToday ? '#7c3aed' : '#1e293b' }}>{date.getDate()}</div>
                 </div>
               )
             })}
@@ -234,7 +250,7 @@ export default function Dashboard() {
             <div key={period.key} style={{ display:'grid', gridTemplateColumns:'80px repeat(7, 1fr)', gap:4, marginBottom:4 }}>
               <div style={{ display:'flex', flexDirection:'column', justifyContent:'flex-start', paddingTop:8, paddingRight:8 }}>
                 <div style={{ fontSize:10, color:'#64748b', fontWeight:600, textAlign:'right' }}>{period.label}</div>
-                <div style={{ fontSize:9, color:'#475569', textAlign:'right' }}>{period.range}</div>
+                <div style={{ fontSize:9, color:'#94a3b8', textAlign:'right' }}>{period.range}</div>
               </div>
               {weekDates.map((date, i) => {
                 const dateStr = date.toISOString().split('T')[0]
@@ -243,13 +259,13 @@ export default function Dashboard() {
                   g.data_hora.startsWith(dateStr) && getPeriod(g.data_hora) === period.key
                 )
                 return (
-                  <div key={i} style={{ minHeight:64, background: isToday ? 'rgba(99,102,241,0.04)' : 'rgba(255,255,255,0.01)', border:'1px solid rgba(255,255,255,0.04)', borderRadius:8, padding:4, display:'flex', flexDirection:'column', gap:3 }}>
+                  <div key={i} style={{ minHeight:64, background: isToday ? 'rgba(99,102,241,0.04)' : 'rgba(0,0,0,0.01)', border:'1px solid rgba(0,0,0,0.04)', borderRadius:8, padding:4, display:'flex', flexDirection:'column', gap:3 }}>
                     {dayPeriodGravs.map(g => (
                       <div key={g.id} style={{ background:`${STATUS_COLOR[g.status]}15`, border:`1px solid ${STATUS_COLOR[g.status]}40`, borderRadius:6, padding:'4px 6px' }}>
                         <div style={{ fontSize:9, color: STATUS_COLOR[g.status], fontWeight:700 }}>
                           {g.data_hora.slice(11,16)} {isCoordinator ? `· ${g.colaboradores?.nome?.split(' ')[0]}` : ''}
                         </div>
-                        <div style={{ fontSize:10, color:'#cbd5e1', lineHeight:1.3, marginTop:1 }}>
+                        <div style={{ fontSize:10, color:'#334155', lineHeight:1.3, marginTop:1 }}>
                           {g.disciplinas?.nome?.slice(0,14)}{(g.disciplinas?.nome?.length || 0) > 14 ? '…' : ''}
                         </div>
                         <div style={{ fontSize:9, color:'#64748b', marginTop:1 }}>
@@ -258,12 +274,12 @@ export default function Dashboard() {
                         <div style={{ display:'flex', gap:3, marginTop:4, flexWrap:'wrap' }}>
                           {g.status === 'proposta' && isCoordinator && (
                             <>
-                              <button onClick={() => updateStatus(g.id, 'aprovada')} style={{ fontSize:8, background:'rgba(96,165,250,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#60a5fa', cursor:'pointer', fontWeight:700 }}>✓</button>
-                              <button onClick={() => updateStatus(g.id, 'cancelada')} style={{ fontSize:8, background:'rgba(248,113,113,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#f87171', cursor:'pointer', fontWeight:700 }}>✕</button>
+                              <button onClick={() => updateStatus(g.id, 'aprovada')} style={{ fontSize:8, background:'rgba(96,165,250,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#2563eb', cursor:'pointer', fontWeight:700 }}>✓</button>
+                              <button onClick={() => updateStatus(g.id, 'cancelada')} style={{ fontSize:8, background:'rgba(248,113,113,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#dc2626', cursor:'pointer', fontWeight:700 }}>✕</button>
                             </>
                           )}
                           {g.status === 'aprovada' && (
-                            <button onClick={() => updateStatus(g.id, 'concluida')} style={{ fontSize:8, background:'rgba(74,222,128,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#4ade80', cursor:'pointer', fontWeight:700 }}>✓ Done</button>
+                            <button onClick={() => updateStatus(g.id, 'concluida')} style={{ fontSize:8, background:'rgba(74,222,128,0.2)', border:'none', borderRadius:3, padding:'2px 5px', color:'#16a34a', cursor:'pointer', fontWeight:700 }}>✓ Done</button>
                           )}
                         </div>
                       </div>
@@ -275,7 +291,7 @@ export default function Dashboard() {
           ))}
 
           {/* Legend */}
-          <div style={{ display:'flex', gap:16, marginTop:12, paddingTop:12, borderTop:'1px solid rgba(255,255,255,0.04)' }}>
+          <div style={{ display:'flex', gap:16, marginTop:12, paddingTop:12, borderTop:'1px solid rgba(0,0,0,0.04)' }}>
             {Object.entries(STATUS_COLOR).map(([k, v]) => (
               <div key={k} style={{ display:'flex', alignItems:'center', gap:5, fontSize:11, color:'#64748b' }}>
                 <span style={{ width:8, height:8, borderRadius:2, background:v, display:'inline-block' }} />
@@ -286,19 +302,19 @@ export default function Dashboard() {
         </div>
 
         {/* Progress bar */}
-        <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
+        <div style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-            <span style={{ fontSize:13, fontWeight:600, color:'#cbd5e1' }}>Progresso Total</span>
-            <span style={{ fontSize:13, color:'#a78bfa', fontWeight:700 }}>{progressoGeral}%</span>
+            <span style={{ fontSize:13, fontWeight:600, color:'#334155' }}>Progresso Total</span>
+            <span style={{ fontSize:13, color:'#7c3aed', fontWeight:700 }}>{progressoGeral}%</span>
           </div>
-          <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:6, height:10, overflow:'hidden' }}>
-            <div style={{ height:'100%', borderRadius:6, width:`${progressoGeral}%`, background:'linear-gradient(90deg,#6366f1,#a78bfa)', transition:'width 0.8s ease' }} />
+          <div style={{ background:'rgba(0,0,0,0.06)', borderRadius:6, height:10, overflow:'hidden' }}>
+            <div style={{ height:'100%', borderRadius:6, width:`${progressoGeral}%`, background:'linear-gradient(90deg,#6366f1,#7c3aed)', transition:'width 0.8s ease' }} />
           </div>
           <div style={{ display:'flex', gap:24, marginTop:12 }}>
-            {[{label:'Concluídos',color:'#4ade80',n:totalConcluidos},{label:'Em Andamento',color:'#fbbf24',n:totalAndamento},{label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento}].map(l => (
-              <div key={l.label} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#94a3b8' }}>
+            {[{label:'Concluídos',color:'#16a34a',n:totalConcluidos},{label:'Em Andamento',color:'#d97706',n:totalAndamento},{label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento}].map(l => (
+              <div key={l.label} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#475569' }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:l.color, display:'inline-block' }} />
-                {l.label}: <strong style={{ color:'#e2e8f0', marginLeft:4 }}>{l.n}</strong>
+                {l.label}: <strong style={{ color:'#1e293b', marginLeft:4 }}>{l.n}</strong>
               </div>
             ))}
           </div>
@@ -307,48 +323,58 @@ export default function Dashboard() {
         {/* Search + Grid */}
         <div style={{ marginBottom:20 }}>
           <input value={busca} onChange={e => setBusca(e.target.value)} placeholder="🔍  Buscar disciplina..."
-            style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'8px 14px', color:'#e2e8f0', fontSize:13, outline:'none', width:300 }} />
+            style={{ background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:10, padding:'8px 14px', color:'#1e293b', fontSize:13, outline:'none', width:300 }} />
         </div>
 
         {loading ? (
-          <div style={{ textAlign:'center', padding:60, color:'#475569' }}>Carregando...</div>
+          <div style={{ textAlign:'center', padding:60, color:'#94a3b8' }}>Carregando...</div>
         ) : (
           <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:16 }}>
             {filtered.map(d => {
               const pct = d.progresso_geral || 0
               return (
                 <Link key={d.id} href={`/disciplinas?id=${d.id}`} style={{ textDecoration:'none' }}>
-                  <div style={{ background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.06)', borderRadius:14, padding:'18px 20px', cursor:'pointer', transition:'all 0.2s' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=`${d.cor}60`; (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.05)' }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(255,255,255,0.06)'; (e.currentTarget as HTMLElement).style.background='rgba(255,255,255,0.03)' }}
+                  <div style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:14, padding:'18px 20px', cursor:'pointer', transition:'all 0.2s' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=`${d.cor}60`; (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.05)' }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.03)' }}
                   >
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                       <div>
-                        <div style={{ fontSize:14, fontWeight:600, color:'#e2e8f0' }}>{d.nome}</div>
-                        {d.microassunto && <div style={{ fontSize:11, color:'#475569', marginTop:2 }}>{d.microassunto}</div>}
+                        <div style={{ fontSize:14, fontWeight:600, color:'#1e293b' }}>{d.nome}</div>
+                        {d.microassunto && <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{d.microassunto}</div>}
                       </div>
                       <div style={{ textAlign:'right' }}>
                         <div style={{ fontSize:22, fontWeight:700, color:d.cor }}>{pct}%</div>
-                        <div style={{ fontSize:10, color:'#475569' }}>{d.total_temas} temas</div>
+                        <div style={{ fontSize:10, color:'#94a3b8' }}>{d.total_temas} temas</div>
                       </div>
                     </div>
-                    <div style={{ background:'rgba(255,255,255,0.06)', borderRadius:4, height:6, overflow:'hidden', marginBottom:12 }}>
+                    <div style={{ background:'rgba(0,0,0,0.06)', borderRadius:4, height:6, overflow:'hidden', marginBottom:12 }}>
                       <div style={{ height:'100%', borderRadius:4, width:`${pct}%`, background:d.cor, transition:'width 0.5s ease' }} />
                     </div>
                     <div style={{ display:'flex', gap:12 }}>
-                      {[{l:'✓',v:d.concluidos,c:'#4ade80'},{l:'◐',v:d.em_andamento,c:'#fbbf24'},{l:'○',v:d.pendentes,c:'#475569'}].map(s => (
+                      {[{l:'✓',v:d.concluidos,c:'#16a34a'},{l:'◐',v:d.em_andamento,c:'#d97706'},{l:'○',v:d.pendentes,c:'#94a3b8'}].map(s => (
                         <div key={s.l} style={{ fontSize:12, color:s.c, fontWeight:600 }}>{s.l} {s.v}</div>
                       ))}
-                      {d.paginas_totais > 0 && <div style={{ fontSize:12, color:'#60a5fa', marginLeft:'auto', fontWeight:600 }}>{d.paginas_totais}p</div>}
+                      {d.paginas_totais > 0 && <div style={{ fontSize:12, color:'#2563eb', marginLeft:'auto', fontWeight:600 }}>{d.paginas_totais}p</div>}
                     </div>
                   </div>
                 </Link>
               )
             })}
-            {filtered.length === 0 && <div style={{ color:'#475569', fontSize:14, padding:40 }}>No disciplines found.</div>}
+            {filtered.length === 0 && <div style={{ color:'#94a3b8', fontSize:14, padding:40 }}>No disciplines found.</div>}
           </div>
+        )}
+        </div>
         )}
       </div>
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={<div style={{ background:'#f4f6fb', minHeight:'100vh' }} />}>
+      <DashboardInner />
+    </Suspense>
   )
 }

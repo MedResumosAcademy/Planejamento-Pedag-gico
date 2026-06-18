@@ -7,6 +7,7 @@ const VALID_CAMPOS = new Set([
   'vid_agendamento','vid_gravacao_feita','vid_aprovacao_aula','vid_publicada',
   'comp_simulado','comp_questoes','comp_flashcards',
   'status_geral','paginas','questoes_previstas','responsavel','observacoes',
+  'gravado_em',
 ])
 
 const VALID_STATUS = new Set(['pendente','em_andamento','concluido'])
@@ -29,7 +30,8 @@ export async function PATCH(req: Request) {
     return NextResponse.json({ error: `Invalid field: ${campo}` }, { status: 400 })
   }
 
-  if (VALID_STATUS.size > 0 && typeof valor === 'string' && campo !== 'responsavel' && campo !== 'observacoes') {
+  const FREE_TEXT = new Set(['responsavel', 'observacoes', 'gravado_em'])
+  if (VALID_STATUS.size > 0 && typeof valor === 'string' && !FREE_TEXT.has(campo)) {
     if (!VALID_STATUS.has(valor) && typeof valor !== 'number') {
       return NextResponse.json({ error: `Invalid status value: ${valor}` }, { status: 400 })
     }

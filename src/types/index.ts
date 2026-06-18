@@ -35,13 +35,28 @@ export interface Tema {
   mat_revisado: SubStatus
   mat_diagramado: SubStatus
   mat_conferencia: SubStatus
-  vid_slide: SubStatus
-  vid_gravacao: SubStatus
-  vid_edicao: SubStatus
+  vid_envio_tema: SubStatus
+  vid_slide_pronto: SubStatus
+  vid_diagramacao: SubStatus
+  vid_aprovacao_slide: SubStatus
+  vid_agendamento: SubStatus
+  vid_gravacao_feita: SubStatus
+  vid_aprovacao_aula: SubStatus
+  vid_publicada: SubStatus
   comp_simulado: SubStatus
   comp_questoes: SubStatus
   comp_flashcards: SubStatus
+  gravado_em: string | null
   updated_at: string
+}
+
+export interface Revisao {
+  id: number
+  tema_id: number
+  revisado_em: string
+  o_que_mudou: string
+  autor: string | null
+  criado_em: string
 }
 
 export interface ExternalLink {
