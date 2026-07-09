@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/hooks/useSession'
 import { getRevisoesByTema, addRevisao, deleteRevisao } from '@/lib/repositories/revisoes'
+import { getProfessores, type ProfessorOption } from '@/lib/repositories/colaboradores'
 import type { Revisao } from '@/types'
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -81,6 +82,7 @@ function Inner() {
   const [expandido, setExpandido] = useState<number|null>(null)
   const [filtroStatus, setFiltroStatus] = useState<Status|''>('')
   const { session } = useSession()
+  const [professores, setProfessores] = useState<ProfessorOption[]>([])
   const [revisoes, setRevisoes] = useState<Record<number, Revisao[]>>({})
   const [revLoading, setRevLoading] = useState<Record<number, boolean>>({})
   const [revForm, setRevForm] = useState<{ data: string; texto: string }>({ data: todayISO(), texto: '' })
@@ -99,6 +101,7 @@ function Inner() {
 
   useEffect(() => { loadDiscs() }, [loadDiscs])
   useEffect(() => { loadTemas(selectedId ?? undefined) }, [selectedId, loadTemas])
+  useEffect(() => { getProfessores().then(setProfessores).catch(e => console.error('Falha ao carregar professores:', e)) }, [])
 
   const toggle = async (t: Tema, campo: string) => {
     const curr = (t as any)[campo] as Status
@@ -124,6 +127,12 @@ function Inner() {
     const r = await fetch('/api/themes', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:t.id, campo:'gravado_em', valor: valor || null }) })
     if (r.ok) { const u = await r.json(); setTemas(prev => prev.map(x => x.id===u.id?u:x)) }
     else { const j = await r.json().catch(() => ({})); setRevErro(j.error || 'Não foi possível salvar a data de gravação.') }
+  }
+  const setResponsavel = async (t: Tema, valor: string) => {
+    setRevErro('')
+    const r = await fetch('/api/themes', { method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ id:t.id, campo:'responsavel', valor: valor || null }) })
+    if (r.ok) { const u = await r.json(); setTemas(prev => prev.map(x => x.id===u.id?u:x)) }
+    else { const j = await r.json().catch(() => ({})); setRevErro(j.error || 'Não foi possível salvar o professor designado.') }
   }
   const submitRevisao = async (t: Tema) => {
     if (!revForm.texto.trim()) return
@@ -308,6 +317,31 @@ function Inner() {
                             <input type="date" value={t.gravado_em || ''} onChange={e=>setGravadoEm(t, e.target.value)}
                               style={{ background:'rgba(0,0,0,0.05)', border:'1px solid rgba(0,0,0,0.1)', borderRadius:8, padding:'6px 10px', color:'#1e293b', fontSize:12, outline:'none', colorScheme:'light' }} />
                             {t.gravado_em && <button onClick={()=>setGravadoEm(t,'')} style={{ background:'none', border:'none', color:'#64748b', fontSize:11, cursor:'pointer' }}>limpar</button>}
+
+                            <span style={{ fontSize:12, color:'#475569', marginLeft:8 }}>👤 Professor designado</span>
+                            {(() => {
+                              const daDisciplina = professores.filter(p => p.disciplina_ids.includes(t.disciplina_id))
+                              const outros = professores.filter(p => !p.disciplina_ids.includes(t.disciplina_id))
+                              const conhecido = professores.some(p => p.nome === t.responsavel)
+                              return (
+                                <select value={t.responsavel || ''} onChange={e=>setResponsavel(t, e.target.value)}
+                                  style={{ background:'rgba(0,0,0,0.05)', border:'1px solid rgba(0,0,0,0.1)', borderRadius:8, padding:'6px 10px', color:'#1e293b', fontSize:12, outline:'none', minWidth:180, cursor:'pointer' }}>
+                                  <option value="">— Selecionar professor —</option>
+                                  {t.responsavel && !conhecido && <option value={t.responsavel}>{t.responsavel}</option>}
+                                  {daDisciplina.length > 0 && (
+                                    <optgroup label="Desta disciplina">
+                                      {daDisciplina.map(p => <option key={p.id} value={p.nome}>{p.nome}</option>)}
+                                    </optgroup>
+                                  )}
+                                  {outros.length > 0 && (
+                                    <optgroup label="Outros professores">
+                                      {outros.map(p => <option key={p.id} value={p.nome}>{p.nome}</option>)}
+                                    </optgroup>
+                                  )}
+                                </select>
+                              )
+                            })()}
+                            {t.responsavel && <button onClick={()=>setResponsavel(t,'')} style={{ background:'none', border:'none', color:'#64748b', fontSize:11, cursor:'pointer' }}>limpar</button>}
                           </div>
 
                           <div style={{ fontSize:12, color:'#475569', marginBottom:8 }}>📝 Revisões do material</div>
