@@ -10,6 +10,7 @@ interface DiscStats {
   id: number; nome: string; cor: string; microassunto: string | null
   total_temas: number; concluidos: number; em_andamento: number; pendentes: number
   paginas_totais: number; progresso_geral: number
+  etapas_concluidas: number; total_etapas: number
 }
 interface Gravacao {
   id: number; professor_id: string; disciplina_id: number; tema_id: number
@@ -113,7 +114,10 @@ function DashboardInner() {
   const totalConcluidos = filtered.reduce((a, d) => a + d.concluidos, 0)
   const totalAndamento = filtered.reduce((a, d) => a + d.em_andamento, 0)
   const totalPaginas = filtered.reduce((a, d) => a + (d.paginas_totais || 0), 0)
-  const progressoGeral = totalTemas > 0 ? Math.round(totalConcluidos * 100 / totalTemas) : 0
+  // Progresso por etapas (mesmo cálculo do painel Gerencial), não por temas 100% concluídos.
+  const totalEtapas = filtered.reduce((a, d) => a + (d.total_etapas || 0), 0)
+  const totalEtapasConcluidas = filtered.reduce((a, d) => a + (d.etapas_concluidas || 0), 0)
+  const progressoGeral = totalEtapas > 0 ? Math.round(totalEtapasConcluidas * 100 / totalEtapas) : 0
 
   const navItems = [
     { href:'/', label:'Dashboard', icon:'📊' },
@@ -204,13 +208,16 @@ function DashboardInner() {
         {/* KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
           {[
-            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalConcluidos} de ${totalTemas} temas`, color:'#7c3aed' },
-            { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706' },
-            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a' },
-            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#2563eb' },
+            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas`, color:'#7c3aed', tip:'Média de conclusão de todas as etapas de produção. Cada tema tem 15 etapas (4 de material, 8 de vídeo, 3 de complementos).' },
+            { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706', tip:'Temas que já têm pelo menos uma etapa concluída, mas ainda não foram 100% finalizados.' },
+            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a', tip:'Temas com todas as 15 etapas concluídas.' },
+            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#2563eb', tip:'Soma das páginas de todos os temas do ciclo.' },
           ].map(kpi => (
-            <div key={kpi.label} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px' }}>
-              <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px' }}>{kpi.label}</div>
+            <div key={kpi.label} title={kpi.tip} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', cursor:'help' }}>
+              <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', display:'flex', alignItems:'center', gap:5 }}>
+                {kpi.label}
+                <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:13, height:13, borderRadius:'50%', border:'1px solid #cbd5e1', color:'#94a3b8', fontSize:9, fontWeight:700 }}>i</span>
+              </div>
               <div style={{ fontSize:32, fontWeight:700, color:kpi.color, lineHeight:1 }}>{kpi.value}</div>
               <div style={{ fontSize:12, color:'#94a3b8', marginTop:6 }}>{kpi.sub}</div>
             </div>
@@ -305,14 +312,18 @@ function DashboardInner() {
         <div style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
             <span style={{ fontSize:13, fontWeight:600, color:'#334155' }}>Progresso Total</span>
-            <span style={{ fontSize:13, color:'#7c3aed', fontWeight:700 }}>{progressoGeral}%</span>
+            <span title={`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas concluídas`} style={{ fontSize:13, color:'#7c3aed', fontWeight:700, cursor:'help' }}>{progressoGeral}%</span>
           </div>
           <div style={{ background:'rgba(0,0,0,0.06)', borderRadius:6, height:10, overflow:'hidden' }}>
             <div style={{ height:'100%', borderRadius:6, width:`${progressoGeral}%`, background:'linear-gradient(90deg,#6366f1,#7c3aed)', transition:'width 0.8s ease' }} />
           </div>
           <div style={{ display:'flex', gap:24, marginTop:12 }}>
-            {[{label:'Concluídos',color:'#16a34a',n:totalConcluidos},{label:'Em Andamento',color:'#d97706',n:totalAndamento},{label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento}].map(l => (
-              <div key={l.label} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#475569' }}>
+            {[
+              {label:'Concluídos',color:'#16a34a',n:totalConcluidos,tip:'Temas com todas as 15 etapas concluídas.'},
+              {label:'Em Andamento',color:'#d97706',n:totalAndamento,tip:'Temas com pelo menos uma etapa feita, mas ainda não finalizados.'},
+              {label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento,tip:'Temas que ainda não tiveram nenhuma etapa iniciada.'},
+            ].map(l => (
+              <div key={l.label} title={l.tip} style={{ display:'flex', alignItems:'center', gap:6, fontSize:12, color:'#475569', cursor:'help' }}>
                 <span style={{ width:8, height:8, borderRadius:'50%', background:l.color, display:'inline-block' }} />
                 {l.label}: <strong style={{ color:'#1e293b', marginLeft:4 }}>{l.n}</strong>
               </div>
@@ -344,7 +355,7 @@ function DashboardInner() {
                         {d.microassunto && <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{d.microassunto}</div>}
                       </div>
                       <div style={{ textAlign:'right' }}>
-                        <div style={{ fontSize:22, fontWeight:700, color:d.cor }}>{pct}%</div>
+                        <div title={`${d.etapas_concluidas} de ${d.total_etapas} etapas concluídas nesta disciplina`} style={{ fontSize:22, fontWeight:700, color:d.cor, cursor:'help' }}>{pct}%</div>
                         <div style={{ fontSize:10, color:'#94a3b8' }}>{d.total_temas} temas</div>
                       </div>
                     </div>
@@ -352,10 +363,14 @@ function DashboardInner() {
                       <div style={{ height:'100%', borderRadius:4, width:`${pct}%`, background:d.cor, transition:'width 0.5s ease' }} />
                     </div>
                     <div style={{ display:'flex', gap:12 }}>
-                      {[{l:'✓',v:d.concluidos,c:'#16a34a'},{l:'◐',v:d.em_andamento,c:'#d97706'},{l:'○',v:d.pendentes,c:'#94a3b8'}].map(s => (
-                        <div key={s.l} style={{ fontSize:12, color:s.c, fontWeight:600 }}>{s.l} {s.v}</div>
+                      {[
+                        {l:'✓',v:d.concluidos,c:'#16a34a',tip:'Temas concluídos (todas as etapas)'},
+                        {l:'◐',v:d.em_andamento,c:'#d97706',tip:'Temas em andamento (algumas etapas feitas)'},
+                        {l:'○',v:d.pendentes,c:'#94a3b8',tip:'Temas não iniciados'},
+                      ].map(s => (
+                        <div key={s.l} title={s.tip} style={{ fontSize:12, color:s.c, fontWeight:600, cursor:'help' }}>{s.l} {s.v}</div>
                       ))}
-                      {d.paginas_totais > 0 && <div style={{ fontSize:12, color:'#2563eb', marginLeft:'auto', fontWeight:600 }}>{d.paginas_totais}p</div>}
+                      {d.paginas_totais > 0 && <div title="Total de páginas da disciplina" style={{ fontSize:12, color:'#2563eb', marginLeft:'auto', fontWeight:600, cursor:'help' }}>{d.paginas_totais}p</div>}
                     </div>
                   </div>
                 </Link>
