@@ -17,7 +17,7 @@ type Esteira = 'mat'|'vid'|'comp'
 const ESTEIRAS = [
   { key:'mat' as Esteira, label:'Materiais', color:'#16a34a', campos:['mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia'] },
   { key:'vid' as Esteira, label:'Vídeo Aulas', color:'#2563eb', campos:['vid_slide','vid_gravacao','vid_edicao'] },
-  { key:'comp' as Esteira, label:'Complementos', color:'#d97706', campos:['comp_simulado','comp_questoes','comp_flashcards'] },
+  { key:'comp' as Esteira, label:'Complementos', color:'#d97706', campos:['comp_questoes','comp_flashcards'] },
 ]
 
 const COLS: { key:Status; label:string; color:string }[] = [

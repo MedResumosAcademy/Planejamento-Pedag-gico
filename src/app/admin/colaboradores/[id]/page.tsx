@@ -182,7 +182,7 @@ export default function ProfessorProfilePage() {
               const subStatus = [
                 { group:'Material', items:[{k:'mat_atualizado',v:t.mat_atualizado},{k:'mat_revisado',v:t.mat_revisado},{k:'mat_diagramado',v:t.mat_diagramado},{k:'mat_conferencia',v:t.mat_conferencia}] },
                 { group:'Video', items:[{k:'vid_slide',v:t.vid_slide},{k:'vid_gravacao',v:t.vid_gravacao},{k:'vid_edicao',v:t.vid_edicao}] },
-                { group:'Extras', items:[{k:'comp_simulado',v:t.comp_simulado},{k:'comp_questoes',v:t.comp_questoes},{k:'comp_flashcards',v:t.comp_flashcards}] },
+                { group:'Extras', items:[{k:'comp_questoes',v:t.comp_questoes},{k:'comp_flashcards',v:t.comp_flashcards}] },
               ]
               return (
                 <div key={t.id} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:12, padding:'14px 18px' }}>

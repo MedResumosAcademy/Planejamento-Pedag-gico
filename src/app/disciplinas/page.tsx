@@ -53,7 +53,6 @@ const GRUPOS = [
   {
     key:'comp', label:'Complementos', color:'#d97706',
     campos:[
-      {k:'comp_simulado',l:'Simulado'},
       {k:'comp_questoes',l:'Questões'},
       {k:'comp_flashcards',l:'Flashcards'},
     ]

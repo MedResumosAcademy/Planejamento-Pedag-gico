@@ -5,7 +5,7 @@ const ALL_SUB_STATUS = [
   'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
   'vid_envio_tema', 'vid_slide_pronto', 'vid_diagramacao', 'vid_aprovacao_slide',
   'vid_agendamento', 'vid_gravacao_feita', 'vid_aprovacao_aula', 'vid_publicada',
-  'comp_simulado', 'comp_questoes', 'comp_flashcards',
+  'comp_questoes', 'comp_flashcards',
 ]
 
 export async function GET() {

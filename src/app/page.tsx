@@ -208,9 +208,9 @@ function DashboardInner() {
         {/* KPIs */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
           {[
-            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas`, color:'#7c3aed', tip:'Média de conclusão de todas as etapas de produção. Cada tema tem 15 etapas (4 de material, 8 de vídeo, 3 de complementos).' },
+            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas`, color:'#7c3aed', tip:'Média de conclusão de todas as etapas de produção. Cada tema tem 14 etapas (4 de material, 8 de vídeo, 2 de complementos).' },
             { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706', tip:'Temas que já têm pelo menos uma etapa concluída, mas ainda não foram 100% finalizados.' },
-            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a', tip:'Temas com todas as 15 etapas concluídas.' },
+            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a', tip:'Temas com todas as 14 etapas concluídas.' },
             { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#2563eb', tip:'Soma das páginas de todos os temas do ciclo.' },
           ].map(kpi => (
             <div key={kpi.label} title={kpi.tip} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', cursor:'help' }}>
@@ -319,7 +319,7 @@ function DashboardInner() {
           </div>
           <div style={{ display:'flex', gap:24, marginTop:12 }}>
             {[
-              {label:'Concluídos',color:'#16a34a',n:totalConcluidos,tip:'Temas com todas as 15 etapas concluídas.'},
+              {label:'Concluídos',color:'#16a34a',n:totalConcluidos,tip:'Temas com todas as 14 etapas concluídas.'},
               {label:'Em Andamento',color:'#d97706',n:totalAndamento,tip:'Temas com pelo menos uma etapa feita, mas ainda não finalizados.'},
               {label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento,tip:'Temas que ainda não tiveram nenhuma etapa iniciada.'},
             ].map(l => (

@@ -68,7 +68,7 @@ export default function GerencialDashboard() {
   const nF = tF.length || 1
 
   const kpis = [
-    { type: 'progresso', l: 'Progresso', v: k.progressoPct + '%', s: `${k.doneStages}/${k.totalStages} etapas`, c: '#7c3aed', tip: 'Etapas concluídas ÷ total. Cada tema tem 15 etapas.' },
+    { type: 'progresso', l: 'Progresso', v: k.progressoPct + '%', s: `${k.doneStages}/${k.totalStages} etapas`, c: '#7c3aed', tip: 'Etapas concluídas ÷ total. Cada tema tem 14 etapas.' },
     { type: 'previsao', l: 'Previsão', v: projStr, s: proj.date ? (onTrack ? 'dentro da meta' : 'após a meta') : 'sem ritmo', c: proj.date ? (onTrack ? '#16a34a' : '#dc2626') : '#94a3b8', tip: 'Término projetado no ritmo atual vs. a meta.' },
     { type: 'velocidade', l: 'Velocidade', v: k.velocity.toFixed(0), s: 'etapas/sem (est.)', c: '#2563eb', tip: 'Etapas por semana — estimativa das últimas 4 semanas.' },
     { type: 'gravacoes', l: 'Gravações', v: k.gravFeitas, s: `${k.gravAgendadas} agendadas`, c: '#0891b2', tip: 'Gravações concluídas no período; e quantas já estão agendadas.' },
@@ -106,7 +106,7 @@ export default function GerencialDashboard() {
       const cutoff = today.getTime() - 28 * DAY
       const recent = tF.filter(t => t.updated_at && new Date(t.updated_at).getTime() >= cutoff).sort((a, b) => new Date(b.updated_at!).getTime() - new Date(a.updated_at!).getTime())
       return (<><div className="dnote">Estimativa: temas atualizados nas últimas 4 semanas. O banco não guarda histórico por etapa, então é aproximado.</div>
-        {recent.length ? recent.map(t => (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">{discById.get(t.disciplina_id)?.nome?.split(' ')[0]} · {A.doneCount(t as any)}/15 · {fmt(t.updated_at!)}</span></div>)) : <div className="empty">Nenhuma atualização recente.</div>}</>)
+        {recent.length ? recent.map(t => (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">{discById.get(t.disciplina_id)?.nome?.split(' ')[0]} · {A.doneCount(t as any)}/{A.N_STAGES} · {fmt(t.updated_at!)}</span></div>)) : <div className="empty">Nenhuma atualização recente.</div>}</>)
     }
     if (drill.type === 'gravacoes') {
       const done = gF.filter(g => g.status === 'concluida').sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
@@ -123,8 +123,8 @@ export default function GerencialDashboard() {
       return ts.length ? ts.map(t => {
         const mat = [0, 1, 2, 3].filter(i => (t as any)[STG[i]] === 'concluido').length
         const vid = [4, 5, 6, 7, 8, 9, 10, 11].filter(i => (t as any)[STG[i]] === 'concluido').length
-        const comp = [12, 13, 14].filter(i => (t as any)[STG[i]] === 'concluido').length
-        return (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">Mat {mat}/4 · Víd {vid}/8 · Comp {comp}/3</span></div>)
+        const comp = [12, 13].filter(i => (t as any)[STG[i]] === 'concluido').length
+        return (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">Mat {mat}/4 · Víd {vid}/8 · Comp {comp}/2</span></div>)
       }) : <div className="empty">Sem temas.</div>
     }
     if (drill.type === 'stage') {

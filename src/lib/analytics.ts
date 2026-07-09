@@ -5,26 +5,26 @@
 // projection are ESTIMATES derived from `temas.updated_at`. They are labeled as
 // such in the UI. A future `tema_eventos` log would make them exact.
 
-// Pipeline REAL do banco: 4 etapas de material + 8 de vídeo + 3 complementares = 15.
+// Pipeline REAL do banco: 4 etapas de material + 8 de vídeo + 2 complementares = 14.
 export const STAGES = [
   'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
   'vid_envio_tema', 'vid_slide_pronto', 'vid_diagramacao', 'vid_aprovacao_slide',
   'vid_agendamento', 'vid_gravacao_feita', 'vid_aprovacao_aula', 'vid_publicada',
-  'comp_simulado', 'comp_questoes', 'comp_flashcards',
+  'comp_questoes', 'comp_flashcards',
 ] as const
 
 export const STAGE_LABELS = [
   'Atualizado', 'Revisado', 'Diagramado', 'Conferência',
   'Enviar tema', 'Slide pronto', 'Diagramação', 'Aprovação slide',
   'Agendar aula', 'Gravação', 'Aprovação aula', 'No sistema',
-  'Simulado', 'Questões', 'Flashcards',
+  'Questões', 'Flashcards',
 ]
 
 export const STAGE_GROUP = [
   'Material', 'Material', 'Material', 'Material',
   'Vídeo', 'Vídeo', 'Vídeo', 'Vídeo',
   'Vídeo', 'Vídeo', 'Vídeo', 'Vídeo',
-  'Complementar', 'Complementar', 'Complementar',
+  'Complementar', 'Complementar',
 ]
 
 export const N_STAGES = STAGES.length
