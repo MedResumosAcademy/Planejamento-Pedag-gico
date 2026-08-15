@@ -5,9 +5,13 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import GerencialDashboard from '@/components/GerencialDashboard'
+import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
+import { CICLOS } from '@/lib/cycles'
+import type { Ciclo } from '@/types'
 
 interface DiscStats {
   id: number; nome: string; cor: string; microassunto: string | null
+  ciclo: Ciclo
   total_temas: number; concluidos: number; em_andamento: number; pendentes: number
   paginas_totais: number; progresso_geral: number
   etapas_concluidas: number; total_etapas: number
@@ -48,6 +52,8 @@ function getPeriod(hora: string): 'manha' | 'tarde' | 'noite' {
 function DashboardInner() {
   const router = useRouter()
   const sp = useSearchParams()
+  const { ciclo } = useCycle()
+  const cycleConfig = CICLOS[ciclo]
   const view: 'macro' | 'gerencial' = sp.get('view') === 'gerencial' ? 'gerencial' : 'macro'
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
@@ -56,38 +62,43 @@ function DashboardInner() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [professorDisciplinas, setProfessorDisciplinas] = useState<number[]>([])
-  const [weekOffset, setWeekOffset] = useState(0)
   const weekDates = getWeekDates()
 
   const load = useCallback(async () => {
     setLoading(true)
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
+    let isCoordinatorUser = false
     if (user) {
       const { data: colab } = await supabase.from('colaboradores').select('nivel, nome').eq('id', user.id).single()
       if (colab) {
+        isCoordinatorUser = colab.nivel === 'coordenador'
         setUserInfo({ id: user.id, nivel: colab.nivel, nome: colab.nome })
         if (colab.nivel === 'professor') {
           const { data: pd } = await supabase.from('professor_disciplinas').select('disciplina_id').eq('professor_id', user.id)
           setProfessorDisciplinas(pd?.map(d => d.disciplina_id) || [])
+        } else {
+          setProfessorDisciplinas([])
         }
       }
 
       // Load this week's recordings
-      const startDate = weekDates[0].toISOString().split('T')[0]
-      const endDate = weekDates[6].toISOString().split('T')[0]
+      const currentWeek = getWeekDates()
+      const startDate = currentWeek[0].toISOString().split('T')[0]
+      const endDate = currentWeek[6].toISOString().split('T')[0]
       let q = supabase.from('gravacoes')
-        .select('*, colaboradores(nome), disciplinas(nome, cor), temas(tema_especifico)')
+        .select('*, colaboradores(nome), disciplinas!inner(nome, cor, ciclo), temas(tema_especifico)')
         .gte('data_hora', startDate)
         .lte('data_hora', endDate + 'T23:59:59')
         .order('data_hora')
+      if (isCoordinatorUser) q = q.eq('disciplinas.ciclo', ciclo)
       const { data: gravs } = await q
       setGravacoes(gravs || [])
     }
-    const r = await fetch('/api/disciplines')
+    const r = await fetch(`/api/disciplines${isCoordinatorUser ? `?ciclo=${ciclo}` : ''}`)
     setDisciplinas(await r.json())
     setLoading(false)
-  }, [])
+  }, [ciclo])
 
   useEffect(() => { load() }, [load])
 
@@ -146,7 +157,7 @@ function DashboardInner() {
                 <div style={{ width:32, height:32, borderRadius:8, background:'linear-gradient(135deg,#6366f1,#8b5cf6)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, fontWeight:700, color:'white', flexShrink:0 }}>M</div>
                 <div>
                   <div style={{ fontSize:13, fontWeight:700, color:'#1e293b', whiteSpace:'nowrap' }}>Med2026</div>
-                  <div style={{ fontSize:10, color:'#64748b', whiteSpace:'nowrap' }}>Ciclo Básico</div>
+                  <div style={{ fontSize:10, color:'#64748b', whiteSpace:'nowrap' }}>{isCoordinator ? cycleConfig.label : 'Produção 2026'}</div>
                 </div>
               </div>
               <button onClick={() => setSidebarOpen(false)} style={{ background:'rgba(0,0,0,0.05)', border:'none', borderRadius:6, padding:'4px 8px', color:'#64748b', cursor:'pointer', fontSize:14 }}>←</button>
@@ -176,7 +187,8 @@ function DashboardInner() {
         {sidebarOpen && (
           <div style={{ padding:'0 20px 16px', fontSize:11, color:'#94a3b8' }}>
             {userInfo?.nome && <div style={{ marginBottom:4, color:'#64748b', fontWeight:500, fontSize:12 }}>{userInfo.nome}</div>}
-            258 temas · 18 disciplinas<br/>~2.136 páginas
+            {totalTemas.toLocaleString('pt-BR')} temas · {filtered.length} disciplinas<br/>
+            ~{totalPaginas.toLocaleString('pt-BR')} páginas
           </div>
         )}
       </div>
@@ -184,7 +196,8 @@ function DashboardInner() {
       {/* Main */}
       <div style={{ marginLeft:SW, flex:1, transition:'margin-left 0.2s ease' }}>
         {/* Seletor de visão: Macro | Gerencial */}
-        <div style={{ padding:'20px 40px 0' }}>
+        <div style={{ padding:'20px 40px 0', display:'flex', alignItems:'center', gap:12, flexWrap:'wrap' }}>
+          {isCoordinator && <CycleSwitcher />}
           <div style={{ display:'inline-flex', background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:10, padding:3, gap:3 }}>
             {([['macro','📊 Macro'],['gerencial','📈 Gerencial']] as const).map(([v,label]) => (
               <button key={v} onClick={() => router.push(v==='macro' ? '/' : '/?view=gerencial')}
@@ -194,14 +207,14 @@ function DashboardInner() {
             ))}
           </div>
         </div>
-        {view === 'gerencial' ? <GerencialDashboard /> : (
+        {view === 'gerencial' ? <GerencialDashboard ciclo={isCoordinator ? ciclo : undefined} /> : (
         <div style={{ padding:'24px 40px 40px' }}>
         <div style={{ marginBottom:28 }}>
           <h1 style={{ fontSize:28, fontWeight:700, color:'#0f172a', letterSpacing:'-0.5px' }}>
             {isProfessor ? `Olá, ${userInfo?.nome?.split(' ')[0]}! 👋` : 'Dashboard de Produção'}
           </h1>
           <p style={{ color:'#64748b', fontSize:14, marginTop:6 }}>
-            {isProfessor ? 'Your disciplines and progress' : 'Ciclo Básico de Medicina 2026'}
+            {isProfessor ? 'Suas disciplinas e o progresso da produção' : cycleConfig.description}
           </p>
         </div>
 
@@ -211,7 +224,7 @@ function DashboardInner() {
             { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas`, color:'#7c3aed', tip:'Média de conclusão de todas as etapas de produção. Cada tema tem 14 etapas (4 de material, 8 de vídeo, 2 de complementos).' },
             { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706', tip:'Temas que já têm pelo menos uma etapa concluída, mas ainda não foram 100% finalizados.' },
             { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a', tip:'Temas com todas as 14 etapas concluídas.' },
-            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:'meta: 2.136 pgs', color:'#2563eb', tip:'Soma das páginas de todos os temas do ciclo.' },
+            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:isCoordinator ? `meta: ${cycleConfig.expectedPages.toLocaleString('pt-BR')} pgs` : `${filtered.length} disciplinas`, color:'#2563eb', tip:'Soma das páginas de todos os temas visíveis.' },
           ].map(kpi => (
             <div key={kpi.label} title={kpi.tip} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', cursor:'help' }}>
               <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', display:'flex', alignItems:'center', gap:5 }}>

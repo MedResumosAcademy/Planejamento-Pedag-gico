@@ -1,8 +1,7 @@
 import { createAdminClient } from '@/lib/supabase/admin'
 import * as A from '@/lib/analytics'
+import { CICLOS, type Ciclo } from '@/lib/cycles'
 
-// Meta de término do ciclo (mantém consistente com o painel).
-const TARGET = '2026-10-31'
 const DAY = 86400000
 
 export type Period = 'weekly' | 'monthly'
@@ -18,6 +17,7 @@ const esc = (s: any) => String(s ?? '').replace(/[&<>"]/g, c => ({ '&': '&amp;',
 
 export interface ReportModel {
   period: Period
+  ciclo: Ciclo
   title: string
   rangeLabel: string
   subject: string
@@ -33,8 +33,9 @@ export interface ReportModel {
   recipients: string[]
 }
 
-export async function buildReport(period: Period): Promise<{ model: ReportModel; html: string }> {
+export async function buildReport(period: Period, ciclo: Ciclo = 'basico'): Promise<{ model: ReportModel; html: string }> {
   const supabase = createAdminClient()
+  const cycleConfig = CICLOS[ciclo]
   const now = new Date()
   const days = period === 'weekly' ? 7 : 30
   const since = new Date(now.getTime() - days * DAY)
@@ -46,17 +47,18 @@ export async function buildReport(period: Period): Promise<{ model: ReportModel;
     supabase.from('temas').select('*'),
     supabase.from('colaboradores').select('id, nome, email, nivel'),
   ])
-  const disciplinas = discRes.data || []
-  const temas = temasRes.data || []
+  const disciplinas = (discRes.data || []).filter((d: any) => d.ciclo === ciclo)
+  const disciplinaIds = new Set(disciplinas.map((d: any) => d.id))
+  const temas = (temasRes.data || []).filter((t: any) => disciplinaIds.has(t.disciplina_id))
   const colaboradores = colabRes.data || []
   const discById = new Map(disciplinas.map((d: any) => [d.id, d]))
 
   // Gravações (janela ampla para o snapshot; filtramos o período depois)
-  const gravWide = (await supabase
+  const gravWide = ((await supabase
     .from('gravacoes')
     .select('*, disciplinas(nome), temas(tema_especifico)')
     .gte('data_hora', new Date(now.getTime() - 12 * 7 * DAY).toISOString().slice(0, 10))
-  ).data || []
+  ).data || []).filter((g: any) => disciplinaIds.has(g.disciplina_id))
 
   // Revisões do período (tabela pode não existir ainda — tolera erro)
   let revisoesRaw: any[] = []
@@ -66,12 +68,12 @@ export async function buildReport(period: Period): Promise<{ model: ReportModel;
       .select('*, temas(tema_especifico, disciplina_id)')
       .gte('criado_em', sinceISO)
       .order('criado_em', { ascending: false })
-    revisoesRaw = r.data || []
+    revisoesRaw = (r.data || []).filter((revisao: any) => disciplinaIds.has(revisao.temas?.disciplina_id))
   } catch { revisoesRaw = [] }
 
   // ---- Snapshot (analytics) ----
-  const k = A.kpis(temas as any, gravWide as any, now, TARGET)
-  const risk = A.riskByDiscipline(disciplinas as any, temas as any, now, TARGET, {})
+  const k = A.kpis(temas as any, gravWide as any, now, cycleConfig.target)
+  const risk = A.riskByDiscipline(disciplinas as any, temas as any, now, cycleConfig.target, {})
   const emRisco = risk.filter(r => r.onTrack === false).map(r => ({ nome: r.nome, pct: r.pct, date: r.date }))
 
   // ---- Atividade no período ----
@@ -96,10 +98,10 @@ export async function buildReport(period: Period): Promise<{ model: ReportModel;
 
   const title = period === 'weekly' ? 'Relatório Semanal' : 'Relatório Mensal'
   const rangeLabel = `${fmt(sinceISO)} – ${fmt(now.toISOString())}`
-  const subject = `${title} · Med2026 · ${rangeLabel} · ${k.progressoPct}% concluído`
+  const subject = `${title} · ${cycleConfig.label} · Med2026 · ${rangeLabel} · ${k.progressoPct}% concluído`
 
   const model: ReportModel = {
-    period, title, rangeLabel, subject,
+    period, ciclo, title, rangeLabel, subject,
     progressoPct: k.progressoPct, doneStages: k.doneStages, totalStages: k.totalStages,
     velocity: k.velocity, projDate: k.projection.date, onTrack: k.projection.onTrack,
     pendencias: k.pendencias, emRisco,
@@ -121,6 +123,7 @@ function listBlock(title: string, rows: string[]) {
 }
 
 export function renderEmail(m: ReportModel): string {
+  const cycleConfig = CICLOS[m.ciclo]
   const statusTxt = m.projDate ? (m.onTrack ? '✓ No prazo' : '⚠ Em risco') : 'Sem ritmo'
   const statusColor = m.projDate ? (m.onTrack ? C.ok : C.risk) : C.faint
   const projStr = m.projDate ? fmt(m.projDate, { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
@@ -147,7 +150,7 @@ export function renderEmail(m: ReportModel): string {
   <div style="background:${C.card};border:1px solid ${C.bd};border-radius:16px;padding:24px 26px">
     <div style="display:flex;justify-content:space-between;align-items:center">
       <div>
-        <div style="font-size:12px;color:${C.accent};font-weight:700;letter-spacing:.5px;text-transform:uppercase">Med2026 · Ciclo Básico</div>
+        <div style="font-size:12px;color:${C.accent};font-weight:700;letter-spacing:.5px;text-transform:uppercase">Med2026 · ${esc(cycleConfig.label)}</div>
         <div style="font-size:22px;font-weight:800;margin-top:2px">${esc(m.title)}</div>
         <div style="font-size:13px;color:${C.muted};margin-top:2px">${esc(m.rangeLabel)}</div>
       </div>
@@ -185,8 +188,8 @@ export function renderEmail(m: ReportModel): string {
 </div></body></html>`
 }
 
-export async function sendReport(period: Period): Promise<{ ok: boolean; sent?: number; recipients?: string[]; error?: string; skipped?: string }> {
-  const { model, html } = await buildReport(period)
+export async function sendReport(period: Period, ciclo: Ciclo = 'basico'): Promise<{ ok: boolean; sent?: number; recipients?: string[]; error?: string; skipped?: string }> {
+  const { model, html } = await buildReport(period, ciclo)
   if (!model.recipients.length) return { ok: false, skipped: 'Nenhum destinatário (defina REPORT_RECIPIENTS ou cadastre coordenadores com email).' }
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return { ok: false, error: 'Falta RESEND_API_KEY no ambiente.' }

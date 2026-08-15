@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getDisciplinas, getTemas } from '@/lib/db'
+import { parseCiclo } from '@/lib/cycles'
 
 const ALL_SUB_STATUS = [
   'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
@@ -8,13 +9,21 @@ const ALL_SUB_STATUS = [
   'comp_questoes', 'comp_flashcards',
 ]
 
-export async function GET() {
-  const [disciplinas, temas] = await Promise.all([getDisciplinas(), getTemas()])
+export async function GET(request: Request) {
+  const rawCiclo = new URL(request.url).searchParams.get('ciclo')
+  const ciclo = parseCiclo(rawCiclo)
+  if (rawCiclo && !ciclo) {
+    return NextResponse.json({ error: 'ciclo deve ser "basico" ou "clinico"' }, { status: 400 })
+  }
+  const [disciplinas, temas] = await Promise.all([
+    getDisciplinas({ ciclo }),
+    getTemas({ ciclo }),
+  ])
 
   const result = disciplinas.map(d => {
     const dt = temas.filter(t => t.disciplina_id === d.id)
     // Status derivado das etapas (não do campo status_geral, que fica desatualizado):
-    // 0 etapas = pendente · todas as 15 = concluído · qualquer coisa no meio = em andamento.
+    // 0 etapas = pendente · todas as 14 = concluído · qualquer coisa no meio = em andamento.
     let concluidos = 0, em_andamento = 0, pendentes = 0
     for (const t of dt) {
       const done = ALL_SUB_STATUS.filter(k => (t as any)[k] === 'concluido').length

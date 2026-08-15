@@ -1,0 +1,2329 @@
+{
+  "ciclo": "clinico",
+  "ano": 2026,
+  "fonte": "CONTROLE MRA-CICLO CLINICO-2026.xlsx",
+  "mapeamento": {
+    "aba": "disciplina",
+    "macroassunto": "disciplina",
+    "microassunto": "tema_especifico",
+    "paginas": "paginas"
+  },
+  "totais": {
+    "disciplinas": 29,
+    "temas": 410,
+    "paginas": 3859
+  },
+  "disciplinas": [
+    {
+      "id": 1,
+      "nome": "ANESTESIOLOGIA",
+      "cor": "#0f766e",
+      "total_temas": 11,
+      "total_paginas": 102,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO E HISTÓRICO",
+          "paginas": 4
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "AVALIAÇÃO PRÉ-ANESTÉSICA",
+          "paginas": 8
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "ENTUBAÇÃO OROTRAQUEAL",
+          "paginas": 11
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "BLOQUEADORES NEUROMUSCULARES",
+          "paginas": 12
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "ANESTÉSICOS LOCAIS",
+          "paginas": 7
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ANESTESIA SUBARACNÓIDEA",
+          "paginas": 9
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ANESTESIA PERIDURAL",
+          "paginas": 4
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ANESTESIA INALATÓRIA",
+          "paginas": 11
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "ANESTESIA VENOSA",
+          "paginas": 12
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "ANESTESIA AMBULATORIAL",
+          "paginas": 13
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "MONITORIZAÇÃO ANESTÉSICA",
+          "paginas": 11
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nome": "CARDIOLOGIA",
+      "cor": "#0369a1",
+      "total_temas": 13,
+      "total_paginas": 227,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA CARDÍACA",
+          "paginas": 14
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "EXAMES COMPLEMENTARES EM CARDIOLOGIA",
+          "paginas": 18
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "HIPERTENSÃO ARTERIAL SISTÊMICA",
+          "paginas": 100
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "EDEMA AGUDO DE PULMÃO",
+          "paginas": 10
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "FEBRE REUMÁTICA",
+          "paginas": 6
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ENDOCARDITE INFECCIOSA",
+          "paginas": 6
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "SÍNDROMES CORONARIANAS AGUDAS",
+          "paginas": 13
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "SÍNDROMES CORONARIANAS CRÔNICAS",
+          "paginas": 12
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "INSUFICIÊNCIA CARDÍACA",
+          "paginas": 9
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "VALVOPATIAS",
+          "paginas": 16
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "MIOCARDIOPATIAS",
+          "paginas": 9
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "PERICARDIOPATIAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "CARDIOPATIAS CONGÊNITAS",
+          "paginas": 8
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nome": "CIRURGIA ABDOMINAL",
+      "cor": "#7c3aed",
+      "total_temas": 12,
+      "total_paginas": 74,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "CIRURGIA BARIÁTRICA",
+          "paginas": 14
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "DOENÇA DIVERTICULAR DO CÓLON",
+          "paginas": 3
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "DIVERTICULITE",
+          "paginas": 3
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DOENÇA HEMORROIDÁRIA",
+          "paginas": 6
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "FISSURA ANAL",
+          "paginas": 4
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "PANCREATITE AGUDA",
+          "paginas": 10
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "PANCREATITE CRÔNICA",
+          "paginas": 5
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "CÂNCER DE PÂNCREAS E DUODENO",
+          "paginas": 7
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CÂNCER HEPÁTICO",
+          "paginas": 1
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TUMOR DE VESÍCULA BILIAR",
+          "paginas": 5
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "CÂNCER DE DUCTOS BILIARES",
+          "paginas": 7
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "CÂNCER COLORRETAL",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "nome": "CIRURGIA CABEÇA E PESCOÇO",
+      "cor": "#be123c",
+      "total_temas": 10,
+      "total_paginas": 99,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "FUNDAMENTOS DA CIRURGIA DE CABEÇA E PESCOÇO",
+          "paginas": 17
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "TRAUMA DE FACE E PESCOÇO",
+          "paginas": 6
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "LESÕES CONGÊNITAS E ADENOPATIAS CERVICAIS",
+          "paginas": 9
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "LESÕES ORAIS",
+          "paginas": 9
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "OBSTRUÇÃO NASAL",
+          "paginas": 13
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "DISFONIAS E LESÕES DA LARINGE",
+          "paginas": 14
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "DISFAGIA E LESÕES DA FARINGE",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "MASSAS SALIVARES",
+          "paginas": 7
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "SINUSITE E TUMOR DE SEIOS PARANASAIS",
+          "paginas": 3
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TUMORES DA TIREOIDE",
+          "paginas": 13
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "nome": "CIRURGIA PEDIÁTRICA",
+      "cor": "#b45309",
+      "total_temas": 6,
+      "total_paginas": 47,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "PRÉ E PÓS-OPERATÓRIO",
+          "paginas": 5
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "PATOLOGIAS CIRÚRGICAS DO TÓRAX DA CRIANÇA",
+          "paginas": 7
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "REGIÃO INGUINAL E GENITÁLIA EXTERNA",
+          "paginas": 11
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DEFEITOS DA PAREDE ABDOMINAL",
+          "paginas": 5
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "ABDOME AGUDO",
+          "paginas": 10
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ANOMALIAS DAS VIAS URINÁRIAS",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "nome": "CIRURGIA TORÁCICA",
+      "cor": "#047857",
+      "total_temas": 17,
+      "total_paginas": 150,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "TRAUMA DE TÓRAX",
+          "paginas": 1
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ANATOMIA DO TÓRAX",
+          "paginas": 12
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "ABORDAGEM IMAGENOLÓGICA DO TÓRAX",
+          "paginas": 21
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "AVALIAÇÃO PRÉ-OPERATÓRIA",
+          "paginas": 8
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "HIPERIDROSE",
+          "paginas": 5
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "PATOLOGIAS DA TRAQUEIA",
+          "paginas": 13
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "PATOLOGIAS CONGÊNITAS DO PULMÃO",
+          "paginas": 10
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ABSCESSO PULMONAR",
+          "paginas": 4
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "BRONQUIECTASIAS",
+          "paginas": 8
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TUMORES PRIMÁRIOS DA PAREDE TORÁCICA",
+          "paginas": 8
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "METÁSTASES PULMONARES",
+          "paginas": 6
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "CÂNCER DE PULMÃO",
+          "paginas": 14
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "TUMORES MENOS FREQUENTES DE PULMÃO",
+          "paginas": 7
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "MESOTELIOMA PLEURAL",
+          "paginas": 7
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "EMPIEMA PLEURAL",
+          "paginas": 7
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "PNEUMOTÓRAX",
+          "paginas": 8
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "MASSAS MEDIASTINAIS",
+          "paginas": 11
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "nome": "DERMATOLOGIA",
+      "cor": "#1d4ed8",
+      "total_temas": 14,
+      "total_paginas": 146,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "ANATOMIA E FISIOLOGIA DA PELE",
+          "paginas": 14
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "SEMIOLOGIA DERMATOLÓGICA",
+          "paginas": 19
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "LESÕES ERITEMATOESCAMOSAS",
+          "paginas": 11
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "LESÕES ECZEMATOSAS",
+          "paginas": 7
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "HANSENÍASE",
+          "paginas": 14
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ACNE",
+          "paginas": 9
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ROSÁCEA",
+          "paginas": 3
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "PIODERMITES",
+          "paginas": 12
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "DERMATOZOONOSES",
+          "paginas": 6
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "DERMATOVIROSES",
+          "paginas": 16
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "MICOSES SUPERFICIAIS",
+          "paginas": 10
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "COLAGENOSES",
+          "paginas": 9
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "FARMACODERMIAS",
+          "paginas": 8
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "NEOPLASIAS CUTÂNEAS",
+          "paginas": 8
+        }
+      ]
+    },
+    {
+      "id": 8,
+      "nome": "ENDOCRINOLOGIA",
+      "cor": "#a21caf",
+      "total_temas": 23,
+      "total_paginas": 190,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO E VALORES DE REFERÊNCIA",
+          "paginas": 3
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "DIABETES MELLITUS",
+          "paginas": 37
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "METABOLISMO DOS LIPÍDIOS E DISLIPIDEMIAS",
+          "paginas": 17
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "OBESIDADE",
+          "paginas": 2
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "SÍNDROME METABÓLICA",
+          "paginas": 2
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "DOENÇAS DAS PARATIREOIDES",
+          "paginas": 5
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "OSTEOPOROSE",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "DOENÇAS DA TIREOIDE",
+          "paginas": 18
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "NÓDULOS DE TIREOIDE",
+          "paginas": 13
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TIREOIDITES",
+          "paginas": 6
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "DIABETES INSIPIDUS",
+          "paginas": 7
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "SIHAD",
+          "paginas": 4
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "HIPERPROLACTINEMIA",
+          "paginas": 5
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "ACROMEGALIA",
+          "paginas": 6
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "SÍNDROME DE CUSHING",
+          "paginas": 7
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "INSUFICIÊNCIA ADRENAL",
+          "paginas": 4
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "HIPERTENSÃO ENDÓCRINA",
+          "paginas": 10
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "HIPERPLASIA ADRENAL CONGÊNITA",
+          "paginas": 7
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "INCIDENTALOMA DE ADRENAL",
+          "paginas": 4
+        },
+        {
+          "ordem": 20,
+          "tema_especifico": "PUBERDADE PRECOCE",
+          "paginas": 5
+        },
+        {
+          "ordem": 21,
+          "tema_especifico": "ATRASO PUBERAL",
+          "paginas": 5
+        },
+        {
+          "ordem": 22,
+          "tema_especifico": "BAIXA ESTATURA",
+          "paginas": 12
+        },
+        {
+          "ordem": 23,
+          "tema_especifico": "HIRSUTISMO",
+          "paginas": 3
+        }
+      ]
+    },
+    {
+      "id": 9,
+      "nome": "GASTROENTEROLOGIA",
+      "cor": "#c2410c",
+      "total_temas": 15,
+      "total_paginas": 137,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "DRGE",
+          "paginas": 10
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "DISPEPSIA",
+          "paginas": 5
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "GASTRITES",
+          "paginas": 7
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "ÚLCERA PÉPTICA",
+          "paginas": 8
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "DISTÚRBIOS MOTORES DO ESÔFAGO",
+          "paginas": 10
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "HEPATITES VIRAIS AGUDAS",
+          "paginas": 8
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "HEPATITES CRÔNICAS",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ESTEATOSE HEPÁTICA NÃO ALCOÓLICA",
+          "paginas": 10
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CIRROSE HEPÁTICA",
+          "paginas": 13
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "HIPERTENSÃO PORTAL",
+          "paginas": 9
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "PANCREATITE AGUDA",
+          "paginas": 9
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "PANCREATITE CRÔNICA",
+          "paginas": 4
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "DIARREIA AGUDA E CRÔNICA",
+          "paginas": 17
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "CONSTIPAÇÃO",
+          "paginas": 10
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "DOENÇA INFLAMATÓRIA INTESTINAL",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 10,
+      "nome": "GERIATRIA",
+      "cor": "#4338ca",
+      "total_temas": 7,
+      "total_paginas": 45,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "HISTÓRICO E EPIDEMIOLOGIA",
+          "paginas": 5
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "AVALIAÇÃO GERIÁTRICA AMPLA",
+          "paginas": 5
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "DEPRESSÃO",
+          "paginas": 11
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DEMÊNCIA DE ALZHEIMER",
+          "paginas": 8
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "DEMÊNCIA VASCULAR",
+          "paginas": 5
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "DELIRIUM",
+          "paginas": 7
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "SÍNDROME DA IMOBILIZAÇÃO",
+          "paginas": 4
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "nome": "GINECOLOGIA",
+      "cor": "#0e7490",
+      "total_temas": 22,
+      "total_paginas": 170,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA GINECOLÓGICA",
+          "paginas": 14
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ANATOMIA GINECOLÓGICA",
+          "paginas": 6
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "CICLO MENSTRUAL",
+          "paginas": 6
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DOENÇA INFLAMATÓRIA PÉLVICA",
+          "paginas": 6
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "SÍNDROME DO OVÁRIO POLICÍSTICO",
+          "paginas": 5
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ENDOMETRIOSE",
+          "paginas": 6
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "HEMORRAGIA UTERINA DISFUNCIONAL",
+          "paginas": 7
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "SEXUALIDADE HUMANA",
+          "paginas": 7
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "VIOLÊNCIA SEXUAL CONTRA MULHERES",
+          "paginas": 4
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "PLANEJAMENTO FAMILIAR",
+          "paginas": 8
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "INFERTILIDADE",
+          "paginas": 4
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "DISMENORREIA",
+          "paginas": 4
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "TPM",
+          "paginas": 5
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "DST",
+          "paginas": 21
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "VULVOVAGINITES",
+          "paginas": 7
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "DISTOPIAS GENITAIS",
+          "paginas": 6
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "CLIMATÉRIO",
+          "paginas": 8
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "PATOLOGIAS BENIGNAS DOS OVÁRIOS",
+          "paginas": 9
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "PATOLOGIAS MALIGNAS DOS OVÁRIOS",
+          "paginas": 9
+        },
+        {
+          "ordem": 20,
+          "tema_especifico": "LEIOMIOMA UTERINO",
+          "paginas": 6
+        },
+        {
+          "ordem": 21,
+          "tema_especifico": "CÂNCER DE ENDOMÉTRIO",
+          "paginas": 6
+        },
+        {
+          "ordem": 22,
+          "tema_especifico": "NEOPLASIA DO COLO UTERINO",
+          "paginas": 16
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "nome": "HEMATOLOGIA",
+      "cor": "#15803d",
+      "total_temas": 23,
+      "total_paginas": 166,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SISTEMA SANGUÍNEO E HEMATOPOIESE",
+          "paginas": 11
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "SISTEMA ABO",
+          "paginas": 6
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "HEMOGRAMA",
+          "paginas": 17
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "ABORDAGEM GERAL DAS ANEMIAS",
+          "paginas": 9
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "ANEMIA FERROPRIVA",
+          "paginas": 6
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ANEMIA APLÁSTICA",
+          "paginas": 7
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ANEMIAS MEGALOBLÁSTICAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ANEMIA FALCIFORME",
+          "paginas": 5
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "TALASSEMIA",
+          "paginas": 7
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "ESFEROCITOSE HEREDITÁRIA",
+          "paginas": 4
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "ANEMIA HEMOLÍTICA AUTO-IMUNE",
+          "paginas": 4
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "HEMOSTASIA PRIMÁRIA E SECUNDÁRIA",
+          "paginas": 9
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "PÚRPURAS",
+          "paginas": 9
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "COAGULOPATIAS HEREDITÁRIAS",
+          "paginas": 10
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "COAGULOPATIAS ADQUIRIDAS",
+          "paginas": 7
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "TROMBOFILIAS",
+          "paginas": 9
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "DOENÇA MIELOPROLIFERATIVA CRÔNICA",
+          "paginas": 5
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "LMA",
+          "paginas": 8
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "LMC",
+          "paginas": 4
+        },
+        {
+          "ordem": 20,
+          "tema_especifico": "LLA",
+          "paginas": 4
+        },
+        {
+          "ordem": 21,
+          "tema_especifico": "LLC",
+          "paginas": 3
+        },
+        {
+          "ordem": 22,
+          "tema_especifico": "LINFOMA",
+          "paginas": 9
+        },
+        {
+          "ordem": 23,
+          "tema_especifico": "DISTÚRBIOS PLASMOCITÁRIOS E MIELOMA MÚLTIPLO",
+          "paginas": 7
+        }
+      ]
+    },
+    {
+      "id": 13,
+      "nome": "INFECTOLOGIA",
+      "cor": "#0f766e",
+      "total_temas": 14,
+      "total_paginas": 166,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "DENGUE",
+          "paginas": 12
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "MONONUCLEOSE INFECCIOSA",
+          "paginas": 6
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "AIDS",
+          "paginas": 12
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "VARICELA E COBREIRO",
+          "paginas": 5
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "RAIVA",
+          "paginas": 6
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "HEPATITES VIRAIS",
+          "paginas": 14
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "FEBRE TIFÓIDE",
+          "paginas": 5
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "LEISHMANIOSE VISCERAL",
+          "paginas": 7
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "MENINGITES BACTERIANAS AGUDAS",
+          "paginas": 10
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TÉTANO",
+          "paginas": 6
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "ESTAFILOCOCCIAS",
+          "paginas": 11
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "ESTREPTOCOCCIAS",
+          "paginas": 11
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "INFECÇÃO HOSPITALAR",
+          "paginas": 6
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "APÊNDICES 1 E 2",
+          "paginas": 55
+        }
+      ]
+    },
+    {
+      "id": 14,
+      "nome": "MEDICINA DE URGÊNCIA",
+      "cor": "#0369a1",
+      "total_temas": 14,
+      "total_paginas": 197,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "AVALIAÇÃO INICIAL AO POLITRAUMATIZADO",
+          "paginas": 12
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "MONITORIZAÇÃO HEMODINÂMICA INVASIVA",
+          "paginas": 22
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "OFERTA E CONSUMO DE OXIGÊNIO",
+          "paginas": 12
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "CHOQUE",
+          "paginas": 18
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "DISTÚRBIOS DA VOLEMIA E SOLUÇÕES HIDROELETROLÍTICAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "SEPSE",
+          "paginas": 13
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "MANEJO DE VIAS AÉREAS",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "INTERPRETAÇÃO DOS DISTÚRBIOS ÁCIDO-BASE",
+          "paginas": 15
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "EDEMA AGUDO DE PULMÃO",
+          "paginas": 16
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "IMAGENS NO TRAUMA",
+          "paginas": 12
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "TCE",
+          "paginas": 14
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "AVCI",
+          "paginas": 25
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "SEDAÇÃO E ANESTESIA NO PACIENTE GRAVE",
+          "paginas": 11
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "ACLS - DIRETRIZES 2010",
+          "paginas": 13
+        }
+      ]
+    },
+    {
+      "id": 15,
+      "nome": "NEFROLOGIA",
+      "cor": "#7c3aed",
+      "total_temas": 10,
+      "total_paginas": 129,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "FISIOLOGIA RENAL",
+          "paginas": 15
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "DIAGNÓSTICO SINDRÔMICO",
+          "paginas": 8
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "EXAMES LABORATORIAIS EM NEFROLOGIA",
+          "paginas": 16
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "INSUFICIÊNCIA RENAL AGUDA",
+          "paginas": 12
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "INSUFICIÊNCIA RENAL CRÔNICA",
+          "paginas": 12
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "SÍNDROMES GLOMERULARES",
+          "paginas": 22
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "RIM E HIPERTENSÃO",
+          "paginas": 9
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "NEFROTOXICIDADE POR DROGAS",
+          "paginas": 14
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CONDUTAS CLÍNICAS NAS DISNATREMIAS",
+          "paginas": 10
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "DISCALEMIAS",
+          "paginas": 11
+        }
+      ]
+    },
+    {
+      "id": 16,
+      "nome": "NEONATOLOGIA",
+      "cor": "#be123c",
+      "total_temas": 17,
+      "total_paginas": 140,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA DO RN",
+          "paginas": 10
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ASSISTÊNCIA AO RN",
+          "paginas": 13
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "RN DISPNEICO",
+          "paginas": 14
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "HIPERBILIRRUBINEMIA NEONATAL",
+          "paginas": 7
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "ALIMENTAÇÃO INFANTIL",
+          "paginas": 9
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ALEITAMENTO MATERNO",
+          "paginas": 6
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "HIDRATAÇÃO DO RN",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "DISTÚRBIOS METABÓLICOS DO RN",
+          "paginas": 8
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "SEPSE E MENINGITE NEONATAL",
+          "paginas": 10
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "CRESCIMENTO E DESENVOLVIMENTO",
+          "paginas": 9
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "IMUNIZAÇÃO",
+          "paginas": 16
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "INFECÇÕES PERINATAIS",
+          "paginas": 15
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "CONVULSÕES NEONATAIS",
+          "paginas": 2
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "HEMORRAGIA INTRACRANIANA",
+          "paginas": 2
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "ANEMIA DO PRÉ-TERMO",
+          "paginas": 4
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "DOENÇA HEMORRÁGICA DO RN",
+          "paginas": 3
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "RETINOPATIA DA PREMATURIDADE",
+          "paginas": 4
+        }
+      ]
+    },
+    {
+      "id": 17,
+      "nome": "NEUROLOGIA",
+      "cor": "#b45309",
+      "total_temas": 20,
+      "total_paginas": 255,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO",
+          "paginas": 8
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "SEMIOLOGIA NEUROLÓGICA",
+          "paginas": 44
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "EXAMES COMPLEMENTARES",
+          "paginas": 18
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DIAGNÓSTICO TOPOGRÁFICO",
+          "paginas": 19
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "TCE",
+          "paginas": 12
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "COMA",
+          "paginas": 13
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "HIPERTENSÃO INTRACRANIANA",
+          "paginas": 20
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "TRM",
+          "paginas": 15
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "MALFORMAÇÃO OCCIPITOCERVICAL",
+          "paginas": 14
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "AVE",
+          "paginas": 27
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "EPILEPSIAS",
+          "paginas": 12
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "DISTÚRBIOS DO MOVIMENTO",
+          "paginas": 11
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "CEFALEIA",
+          "paginas": 8
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "DEMÊNCIAS",
+          "paginas": 7
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "ESCLEROSE MÚLTIPLA",
+          "paginas": 4
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "ELA",
+          "paginas": 3
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "MIOPATIAS E NEUROPATIAS",
+          "paginas": 11
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "HIDROCEFALIA E DISRAFISMOS",
+          "paginas": 5
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "NEUROPARASITOSES",
+          "paginas": 2
+        },
+        {
+          "ordem": 20,
+          "tema_especifico": "TUMORES CEREBRAIS",
+          "paginas": 2
+        }
+      ]
+    },
+    {
+      "id": 18,
+      "nome": "OBSTETRÍCIA",
+      "cor": "#047857",
+      "total_temas": 19,
+      "total_paginas": 130,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "DIAGNÓSTICO DE GRAVIDEZ",
+          "paginas": 7
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ASSISTÊNCIA PRÉ-NATAL",
+          "paginas": 9
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "ESTUDO DA BACIA",
+          "paginas": 8
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "ESTÁTICA FETAL",
+          "paginas": 4
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "APRESENTAÇÃO CEFÁLICA FLETIDA",
+          "paginas": 9
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "PARTOGRAMA",
+          "paginas": 8
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "FÓRCEPS",
+          "paginas": 3
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "PRENHEZ ECTÓPICA",
+          "paginas": 4
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "ABORTAMENTO",
+          "paginas": 4
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "DESCOLAMENTO PREMATURO DA PLACENTA",
+          "paginas": 5
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "PLACENTA PRÉVIA",
+          "paginas": 3
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "OPERAÇÃO CESARIANA",
+          "paginas": 6
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "PARTO PREMATURO",
+          "paginas": 12
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "AMNIORREXE",
+          "paginas": 4
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "PATOLOGIAS DO LÍQUIDO AMNIÓTICO",
+          "paginas": 6
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "CARDIOTOCOGRAFIA",
+          "paginas": 10
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "SOFRIMENTO FETAL",
+          "paginas": 8
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "VITALIDADE FETAL",
+          "paginas": 10
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "DOENÇA HIPERTENSIVA ESPECÍFICA DA GESTAÇÃO",
+          "paginas": 10
+        }
+      ]
+    },
+    {
+      "id": 19,
+      "nome": "OFTALMOLOGIA",
+      "cor": "#1d4ed8",
+      "total_temas": 12,
+      "total_paginas": 69,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "ANATOMIA DO OLHO E EXAME FÍSICO",
+          "paginas": 16
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "UVEÍTES",
+          "paginas": 5
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "DOENÇAS DA RETINA",
+          "paginas": 10
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "GLAUCOMA",
+          "paginas": 8
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "CATARATA",
+          "paginas": 4
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "DOENÇAS DA CONJUNTIVA",
+          "paginas": 7
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "DOENÇAS DA ESCLERA",
+          "paginas": 3
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "DOENÇAS DA ÓRBITA",
+          "paginas": 4
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "DOENÇAS DA CÓRNEA",
+          "paginas": 4
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "DOENÇAS DAS VIAS LACRIMAIS",
+          "paginas": 1
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "DOENÇAS DA PÁLPEBRA",
+          "paginas": 5
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "TRAUMA OCULAR",
+          "paginas": 2
+        }
+      ]
+    },
+    {
+      "id": 20,
+      "nome": "ONCOLOGIA",
+      "cor": "#a21caf",
+      "total_temas": 15,
+      "total_paginas": 119,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "BASES DA ONCOLOGIA",
+          "paginas": 11
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "PRINCÍPIOS DA RADIOTERAPIA",
+          "paginas": 6
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "CÂNCER DE COLO DO ÚTERO",
+          "paginas": 10
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "CÂNCER DE MAMA",
+          "paginas": 10
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "TUMORES DO TRATO GASTRINTESTINAL",
+          "paginas": 13
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "CÂNCER DE PULMÃO",
+          "paginas": 8
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "CÂNCER DE PRÓSTATA",
+          "paginas": 11
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "TUMORES CUTÂNEOS",
+          "paginas": 9
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CÂNCER GENITURINÁRIO",
+          "paginas": 5
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TUMORES DO SNC",
+          "paginas": 9
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "TUMORES DO SNC NA INFÂNCIA",
+          "paginas": 6
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "TUMOR DE WILMS",
+          "paginas": 5
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "NEUROBLASTOMA",
+          "paginas": 5
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "RETINOBLASTOMA",
+          "paginas": 4
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "OSTEOSSARCOMA",
+          "paginas": 7
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "nome": "ORTOPEDIA",
+      "cor": "#c2410c",
+      "total_temas": 19,
+      "total_paginas": 156,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "TERMINOLOGIA EM ORTOPEDIA E TRAUMATOLOGIA",
+          "paginas": 8
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "PRINCÍPIOS RADIOGRÁFICOS EM ORTOPEDIA",
+          "paginas": 11
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "FRATURAS EM GERAL E BIOLOGIA DAS FRATURAS",
+          "paginas": 14
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "TRATAMENTO DAS FRATURAS",
+          "paginas": 7
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "COMPLICAÇÕES DAS FRATURAS",
+          "paginas": 7
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "FRATURAS EXPOSTAS",
+          "paginas": 5
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "SÍNDROME COMPARTIMENTAL",
+          "paginas": 3
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ATENDIMENTO INICIAL AO POLITRAUMATIZADO",
+          "paginas": 5
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "TRM",
+          "paginas": 16
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "LOMBALGIA",
+          "paginas": 5
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "OSTEONECROSE DO QUADRIL",
+          "paginas": 7
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "BIOMECÂNICA DO JOELHO",
+          "paginas": 12
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "ENTORSE DE TORNOZELO",
+          "paginas": 4
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "FRATURAS DO ESQUELETO EM DESENVOLVIMENTO",
+          "paginas": 12
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "SÍNDROME DA CRIANÇA ESPANCADA",
+          "paginas": 4
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "DESENVOLVIMENTO DOS MMII",
+          "paginas": 5
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "DOENÇAS DO QUADRIL NA INFÂNCIA",
+          "paginas": 13
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "DEFORMIDADES DA COLUNA VERTEBRAL",
+          "paginas": 12
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "INFECÇÕES OSTEOARTICULARES",
+          "paginas": 6
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "nome": "OTORRINOLARINGOLOGIA",
+      "cor": "#4338ca",
+      "total_temas": 8,
+      "total_paginas": 78,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO À ORL",
+          "paginas": 12
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "LESÕES ORAIS",
+          "paginas": 9
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "FARINGOTONSILITES",
+          "paginas": 9
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "ANATOMIA, FISIOLOGIA E LESÕES DA LARINGE",
+          "paginas": 11
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "ANATOMIA E FISIOLOGIA DA AUDIÇÃO",
+          "paginas": 17
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "OTITES",
+          "paginas": 5
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ANATOMIA E FISIOLOGIA APLICADA DO NARIZ",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "RINITES E RINOSSINUSITES",
+          "paginas": 7
+        }
+      ]
+    },
+    {
+      "id": 23,
+      "nome": "PATOLOGIA",
+      "cor": "#0e7490",
+      "total_temas": 11,
+      "total_paginas": 86,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO À PATOLOGIA",
+          "paginas": 2
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "LESÃO E MORTE CELULAR",
+          "paginas": 11
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "INFLAMAÇÃO AGUDA",
+          "paginas": 8
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "INFLAMAÇÃO CRÔNICA",
+          "paginas": 7
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "REPARO CELULAR",
+          "paginas": 4
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "DISTÚRBIOS HEMODINÂMICOS",
+          "paginas": 9
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "DOENÇAS INFECCIOSAS",
+          "paginas": 11
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "DEGENERAÇÕES CELULARES",
+          "paginas": 7
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "PIGMENTAÇÕES PATOLÓGICAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "ATEROSCLEROSE",
+          "paginas": 7
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "NEOPLASIAS",
+          "paginas": 14
+        }
+      ]
+    },
+    {
+      "id": 24,
+      "nome": "PEDIATRIA",
+      "cor": "#15803d",
+      "total_temas": 12,
+      "total_paginas": 110,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA PEDIÁTRICA",
+          "paginas": 12
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ADOLESCÊNCIA",
+          "paginas": 7
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "IVAS",
+          "paginas": 13
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "IVAI",
+          "paginas": 7
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "DIARREIA AGUDA",
+          "paginas": 9
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "CHOQUE NA CRIANÇA",
+          "paginas": 10
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "SEPSE",
+          "paginas": 5
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "SUPORTE BÁSICO E AVANÇADO DE VIDA",
+          "paginas": 15
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CRISE CONVULSIVA FEBRIL",
+          "paginas": 4
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "EPILEPSIA",
+          "paginas": 6
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "DOENÇAS EXANTEMÁTICAS EM PEDIATRIA",
+          "paginas": 13
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "ASMA EM PEDIATRIA",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "nome": "PNEUMOLOGIA",
+      "cor": "#0f766e",
+      "total_temas": 23,
+      "total_paginas": 215,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO",
+          "paginas": 11
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "SEMIOLOGIA RESPIRATÓRIA",
+          "paginas": 13
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "TESTES DE FUNÇÃO PULMONAR",
+          "paginas": 22
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DIAGNÓSTICO POR IMAGEM",
+          "paginas": 14
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "PNEUMONIA COMUNITÁRIA",
+          "paginas": 13
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "PNEUMONIA NOSOCOMIAL",
+          "paginas": 6
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "PNEUMONIA NO IMUNOCOMPROMETIDO",
+          "paginas": 3
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "MICOSES PULMONARES",
+          "paginas": 6
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "TUBERCULOSE",
+          "paginas": 16
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "SUPURAÇÕES PULMONARES",
+          "paginas": 11
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "DERRAME PLEURAL",
+          "paginas": 5
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "PNEUMOTÓRAX",
+          "paginas": 2
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "ASMA",
+          "paginas": 10
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "DPOC",
+          "paginas": 18
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "CÂNCER DE PULMÃO",
+          "paginas": 8
+        },
+        {
+          "ordem": 16,
+          "tema_especifico": "NÓDULO PULMONAR",
+          "paginas": 5
+        },
+        {
+          "ordem": 17,
+          "tema_especifico": "TROMBOEMBOLISMO PULMONAR",
+          "paginas": 13
+        },
+        {
+          "ordem": 18,
+          "tema_especifico": "TOSSE",
+          "paginas": 5
+        },
+        {
+          "ordem": 19,
+          "tema_especifico": "SILICOSE",
+          "paginas": 4
+        },
+        {
+          "ordem": 20,
+          "tema_especifico": "CHURG-STRAUSS",
+          "paginas": 4
+        },
+        {
+          "ordem": 21,
+          "tema_especifico": "SARCOIDOSE",
+          "paginas": 6
+        },
+        {
+          "ordem": 22,
+          "tema_especifico": "SAHOS",
+          "paginas": 5
+        },
+        {
+          "ordem": 23,
+          "tema_especifico": "INSUFICIÊNCIA RESPIRATÓRIA AGUDA",
+          "paginas": 15
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "nome": "PSIQUIATRIA",
+      "cor": "#0369a1",
+      "total_temas": 10,
+      "total_paginas": 88,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "ANAMNESE PSIQUIÁTRICA",
+          "paginas": 19
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "PSICOFÁRMACOS",
+          "paginas": 17
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "TRANSTORNOS ORGÂNICOS",
+          "paginas": 7
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "TRANSTORNOS RELACIONADOS AO USO DE SUBSTÂNCIAS PSICOATIVAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "TRANSTORNOS DO HUMOR",
+          "paginas": 11
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "TRANSTORNOS DA ANSIEDADE",
+          "paginas": 6
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ESQUIZOFRENIAS",
+          "paginas": 10
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "TRANSTORNOS DISSOCIATIVOS, SOMATOFORMES, ALIMENTARES E DO SONO",
+          "paginas": 4
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "TRANSTORNOS DA INFÂNCIA",
+          "paginas": 4
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "TRANSTORNOS DE PERSONALIDADE",
+          "paginas": 4
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "nome": "RADIOLOGIA",
+      "cor": "#7c3aed",
+      "total_temas": 7,
+      "total_paginas": 119,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "INTRODUÇÃO À RADIOLOGIA",
+          "paginas": 16
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "ESTUDO RADIOLÓGICO DO TÓRAX",
+          "paginas": 23
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "ESTUDO RADIOLÓGICO DO ABDOME",
+          "paginas": 28
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "PROPEDÊUTICA POR IMAGEM EM OBSTETRÍCIA",
+          "paginas": 10
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "NEURORRADIOLOGIA",
+          "paginas": 16
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "SISTEMA ESQUELÉTICO",
+          "paginas": 17
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ESTUDO RADIOLÓGICO DO APARELHO URINÁRIO",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "nome": "REUMATOLOGIA",
+      "cor": "#be123c",
+      "total_temas": 11,
+      "total_paginas": 85,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA REUMATOLÓGICA",
+          "paginas": 17
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "MÉTODOS COMPLEMENTARES",
+          "paginas": 5
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "OSTEOARTRITE",
+          "paginas": 6
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "GOTA",
+          "paginas": 4
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "OSTEOPOROSE",
+          "paginas": 10
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "ARTRITES NA INFÂNCIA",
+          "paginas": 10
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "ARTRITE REUMATOIDE",
+          "paginas": 8
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "ESPONDILOARTROPATIAS SORONEGATIVAS",
+          "paginas": 6
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "ESCLEROSE SISTÊMICA PROGRESSIVA",
+          "paginas": 6
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "MIOPATIAS INFLAMATÓRIAS IDIOPÁTICAS",
+          "paginas": 4
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "LÚPUS ERITEMATOSO SISTÊMICO",
+          "paginas": 9
+        }
+      ]
+    },
+    {
+      "id": 29,
+      "nome": "UROLOGIA",
+      "cor": "#b45309",
+      "total_temas": 15,
+      "total_paginas": 164,
+      "temas": [
+        {
+          "ordem": 1,
+          "tema_especifico": "SEMIOLOGIA UROLÓGICA",
+          "paginas": 13
+        },
+        {
+          "ordem": 2,
+          "tema_especifico": "LITÍASE URINÁRIA",
+          "paginas": 14
+        },
+        {
+          "ordem": 3,
+          "tema_especifico": "INFECÇÃO URINÁRIA",
+          "paginas": 9
+        },
+        {
+          "ordem": 4,
+          "tema_especifico": "DOENÇAS SEXUALMENTE TRANSMISSÍVEIS",
+          "paginas": 13
+        },
+        {
+          "ordem": 5,
+          "tema_especifico": "HIPERPLASIA PROSTÁTICA BENIGNA",
+          "paginas": 14
+        },
+        {
+          "ordem": 6,
+          "tema_especifico": "AVALIAÇÃO URODINÂMICA",
+          "paginas": 7
+        },
+        {
+          "ordem": 7,
+          "tema_especifico": "CÂNCER DE PRÓSTATA",
+          "paginas": 16
+        },
+        {
+          "ordem": 8,
+          "tema_especifico": "CÂNCER DE BEXIGA URINÁRIA",
+          "paginas": 9
+        },
+        {
+          "ordem": 9,
+          "tema_especifico": "CÂNCER RENAL",
+          "paginas": 13
+        },
+        {
+          "ordem": 10,
+          "tema_especifico": "CÂNCER DE PÊNIS",
+          "paginas": 7
+        },
+        {
+          "ordem": 11,
+          "tema_especifico": "TUMORES DE TESTÍCULO",
+          "paginas": 11
+        },
+        {
+          "ordem": 12,
+          "tema_especifico": "PATOLOGIAS ESCROTAIS E PENIANAS",
+          "paginas": 10
+        },
+        {
+          "ordem": 13,
+          "tema_especifico": "BEXIGA NEUROGÊNICA",
+          "paginas": 10
+        },
+        {
+          "ordem": 14,
+          "tema_especifico": "INCONTINÊNCIA URINÁRIA EM MULHERES",
+          "paginas": 6
+        },
+        {
+          "ordem": 15,
+          "tema_especifico": "TRAUMA UROGENITAL",
+          "paginas": 12
+        }
+      ]
+    }
+  ]
+}

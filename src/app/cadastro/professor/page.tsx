@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-interface Disciplina { id: number; nome: string }
+interface Disciplina { id: number; nome: string; ciclo: 'basico' | 'clinico' }
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
 export default function CadastroProfessor() {
@@ -19,7 +19,7 @@ export default function CadastroProfessor() {
   })
 
   useEffect(() => {
-    createClient().from('disciplinas').select('id, nome').order('nome').then(({ data }) => setDisciplinas(data || []))
+    createClient().from('disciplinas').select('id, nome, ciclo').order('nome').then(({ data }) => setDisciplinas(data || []))
   }, [])
 
   function toggleDisciplina(id: number) {
@@ -71,7 +71,7 @@ export default function CadastroProfessor() {
         <div style={{ textAlign:'center', marginBottom:32 }}>
           <div style={{ width:48, height:48, borderRadius:12, background:'linear-gradient(135deg,#0891b2,#0d9488)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:24, fontWeight:700, color:'white', margin:'0 auto 16px' }}>M</div>
           <h1 style={{ fontSize:20, fontWeight:700, color:'#0f172a', margin:0 }}>Professor Registration</h1>
-          <p style={{ fontSize:13, color:'#64748b', marginTop:4 }}>Med2026 — Ciclo Básico de Medicina</p>
+          <p style={{ fontSize:13, color:'#64748b', marginTop:4 }}>Med2026 — Ciclos Básico e Clínico</p>
         </div>
 
         {/* Steps indicator */}
@@ -129,12 +129,21 @@ export default function CadastroProfessor() {
           <div>
             <h2 style={{ fontSize:15, fontWeight:600, color:'#334155', marginBottom:8 }}>Your Disciplines</h2>
             <p style={{ fontSize:12, color:'#64748b', marginBottom:20 }}>Select the disciplines you will teach</p>
-            <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:24 }}>
-              {disciplinas.map(d => (
-                <button key={d.id} onClick={() => toggleDisciplina(d.id)}
-                  style={{ padding:'7px 14px', borderRadius:8, border:'1px solid', borderColor: form.disciplinas.includes(d.id) ? '#0891b2' : 'rgba(0,0,0,0.08)', background: form.disciplinas.includes(d.id) ? 'rgba(8,145,178,0.15)' : 'transparent', color: form.disciplinas.includes(d.id) ? '#0891b2' : '#64748b', fontSize:12, fontWeight:500, cursor:'pointer' }}>
-                  {d.nome}
-                </button>
+            <div style={{ marginBottom:24 }}>
+              {(['basico','clinico'] as const).map(ciclo => (
+                <div key={ciclo} style={{ marginBottom:16 }}>
+                  <div style={{ fontSize:10, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', marginBottom:8 }}>
+                    Ciclo {ciclo === 'basico' ? 'Básico' : 'Clínico'}
+                  </div>
+                  <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                    {disciplinas.filter(d => d.ciclo === ciclo).map(d => (
+                      <button key={d.id} onClick={() => toggleDisciplina(d.id)}
+                        style={{ padding:'7px 14px', borderRadius:8, border:'1px solid', borderColor: form.disciplinas.includes(d.id) ? '#0891b2' : 'rgba(0,0,0,0.08)', background: form.disciplinas.includes(d.id) ? 'rgba(8,145,178,0.15)' : 'transparent', color: form.disciplinas.includes(d.id) ? '#0891b2' : '#64748b', fontSize:12, fontWeight:500, cursor:'pointer' }}>
+                        {d.nome}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
             {error && <div style={{ background:'rgba(239,68,68,0.1)', border:'1px solid rgba(239,68,68,0.2)', borderRadius:8, padding:'10px 14px', fontSize:13, color:'#dc2626', marginBottom:16 }}>{error}</div>}

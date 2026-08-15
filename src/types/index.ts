@@ -1,6 +1,7 @@
 export type UserLevel = 'coordenador' | 'professor' | 'aluno'
 export type RecordingStatus = 'proposta' | 'aprovada' | 'concluida' | 'cancelada'
 export type SubStatus = 'pendente' | 'em_andamento' | 'concluido'
+export type Ciclo = 'basico' | 'clinico'
 
 export interface Colaborador {
   id: string
@@ -19,6 +20,7 @@ export interface Disciplina {
   cor: string
   microassunto: string | null
   total_paginas: number
+  ciclo: Ciclo
 }
 
 export interface Tema {
