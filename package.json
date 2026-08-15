@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "validate:clinical": "node scripts/validate-clinical-cycle.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

@@ -1,10 +1,12 @@
 'use client'
 import { useEffect, useState, useCallback, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useSession } from '@/hooks/useSession'
 import { getRevisoesByTema, addRevisao, deleteRevisao } from '@/lib/repositories/revisoes'
 import { getProfessores, type ProfessorOption } from '@/lib/repositories/colaboradores'
+import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
+import { CICLOS } from '@/lib/cycles'
 import type { Revisao } from '@/types'
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -25,7 +27,7 @@ interface Tema {
   vid_agendamento:Status; vid_gravacao_feita:Status; vid_aprovacao_aula:Status; vid_publicada:Status
   comp_simulado:Status; comp_questoes:Status; comp_flashcards:Status
 }
-interface Disc { id:number; nome:string; cor:string; microassunto:string|null; total_temas:number; concluidos:number; em_andamento:number; pendentes:number; paginas_totais:number; progresso_geral:number }
+interface Disc { id:number; nome:string; cor:string; ciclo:'basico'|'clinico'; microassunto:string|null; total_temas:number; concluidos:number; em_andamento:number; pendentes:number; paginas_totais:number; progresso_geral:number }
 
 const GRUPOS = [
   {
@@ -73,14 +75,18 @@ const VID_STEPS = [
 
 function Inner() {
   const sp = useSearchParams()
+  const router = useRouter()
+  const { ciclo } = useCycle()
+  const cycleConfig = CICLOS[ciclo]
   const selectedId = sp.get('id') ? Number(sp.get('id')) : null
   const [disciplinas, setDisciplinas] = useState<Disc[]>([])
+  const [disciplinasLoaded, setDisciplinasLoaded] = useState(false)
   const [temas, setTemas] = useState<Tema[]>([])
   const [loading, setLoading] = useState(false)
   const [busca, setBusca] = useState('')
   const [expandido, setExpandido] = useState<number|null>(null)
   const [filtroStatus, setFiltroStatus] = useState<Status|''>('')
-  const { session } = useSession()
+  const { session, loading: sessionLoading, isCoordinator } = useSession()
   const [professores, setProfessores] = useState<ProfessorOption[]>([])
   const [revisoes, setRevisoes] = useState<Record<number, Revisao[]>>({})
   const [revLoading, setRevLoading] = useState<Record<number, boolean>>({})
@@ -89,17 +95,38 @@ function Inner() {
   const [revErro, setRevErro] = useState('')
 
   const loadDiscs = useCallback(async () => {
-    const r = await fetch('/api/disciplines'); setDisciplinas(await r.json())
-  }, [])
+    if (sessionLoading) return
+    setDisciplinasLoaded(false)
+    try {
+      const r = await fetch(`/api/disciplines${isCoordinator ? `?ciclo=${ciclo}` : ''}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      setDisciplinas(await r.json())
+    } catch (e) {
+      console.error('Falha ao carregar disciplinas:', e)
+      setDisciplinas([])
+    } finally {
+      setDisciplinasLoaded(true)
+    }
+  }, [ciclo, isCoordinator, sessionLoading])
 
   const loadTemas = useCallback(async (did?: number) => {
+    if (sessionLoading) return
     setLoading(true)
-    const url = did ? `/api/themes?disciplina_id=${did}` : '/api/themes'
+    const params = new URLSearchParams()
+    if (did) params.set('disciplina_id', String(did))
+    if (isCoordinator) params.set('ciclo', ciclo)
+    const url = `/api/themes${params.size ? `?${params}` : ''}`
     const r = await fetch(url); setTemas(await r.json()); setLoading(false)
-  }, [])
+  }, [ciclo, isCoordinator, sessionLoading])
 
   useEffect(() => { loadDiscs() }, [loadDiscs])
   useEffect(() => { loadTemas(selectedId ?? undefined) }, [selectedId, loadTemas])
+  useEffect(() => {
+    if (isCoordinator && disciplinasLoaded && selectedId && !disciplinas.some(d => d.id === selectedId)) {
+      router.replace('/disciplinas')
+    }
+  }, [disciplinas, disciplinasLoaded, isCoordinator, router, selectedId])
+  useEffect(() => { setExpandido(null) }, [ciclo])
   useEffect(() => { getProfessores().then(setProfessores).catch(e => console.error('Falha ao carregar professores:', e)) }, [])
 
   const toggle = async (t: Tema, campo: string) => {
@@ -160,6 +187,7 @@ function Inner() {
         <div style={{ padding:'16px', borderBottom:'1px solid rgba(0,0,0,0.06)' }}>
           <Link href="/" style={{ textDecoration:'none', color:'#64748b', fontSize:12 }}>← Dashboard</Link>
           <div style={{ fontSize:16, fontWeight:700, color:'#1e293b', marginTop:10 }}>Disciplinas</div>
+          {isCoordinator && <div style={{ marginTop:12 }}><CycleSwitcher compact /></div>}
         </div>
         <div style={{ padding:'8px', flex:1 }}>
           <Link href="/disciplinas" style={{ textDecoration:'none' }}>
@@ -191,7 +219,7 @@ function Inner() {
                 <div style={{ fontSize:12, color:'#94a3b8' }}>{selectedDisc.concluidos}/{selectedDisc.total_temas} temas</div>
               </div>
             </div>
-          ) : <h1 style={{ fontSize:22, fontWeight:700, color:'#0f172a' }}>Todos os Temas</h1>}
+          ) : <h1 style={{ fontSize:22, fontWeight:700, color:'#0f172a' }}>Todos os Temas · {isCoordinator ? cycleConfig.label : 'Minhas disciplinas'}</h1>}
         </div>
 
         {/* Filtros */}

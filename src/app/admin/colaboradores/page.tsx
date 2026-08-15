@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
-interface Disciplina { id: number; nome: string }
+interface Disciplina { id: number; nome: string; ciclo: 'basico' | 'clinico' }
 interface Colaborador {
   id: string; nome: string; email: string; telefone: string | null
   nivel: 'coordenador' | 'professor'; criado_em: string
@@ -41,7 +41,7 @@ export default function ColaboradoresPage() {
       supabase.from('colaboradores')
         .select('*, professor_disciplinas(disciplina_id), professor_horarios(dia_semana, hora_inicio, hora_fim)')
         .order('criado_em'),
-      supabase.from('disciplinas').select('id, nome').order('nome')
+      supabase.from('disciplinas').select('id, nome, ciclo').order('nome')
     ])
     setColaboradores(cols || [])
     setDisciplinas(discs || [])
@@ -297,14 +297,21 @@ export default function ColaboradoresPage() {
                 <>
                   <div style={{ marginBottom:20 }}>
                     <label style={{ fontSize:11, color:'#475569', fontWeight:500, display:'block', marginBottom:8 }}>DISCIPLINES</label>
-                    <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
-                      {disciplinas.map(d => (
-                        <button key={d.id} onClick={() => toggleDisciplina(d.id)}
-                          style={{ padding:'5px 10px', borderRadius:6, border:'1px solid', borderColor: form.disciplinas.includes(d.id) ? '#6366f1' : 'rgba(0,0,0,0.08)', background: form.disciplinas.includes(d.id) ? 'rgba(99,102,241,0.15)' : 'transparent', color: form.disciplinas.includes(d.id) ? '#7c3aed' : '#64748b', fontSize:11, cursor:'pointer' }}>
-                          {d.nome}
-                        </button>
-                      ))}
-                    </div>
+                    {(['basico','clinico'] as const).map(ciclo => (
+                      <div key={ciclo} style={{ marginBottom:12 }}>
+                        <div style={{ fontSize:10, color:'#94a3b8', fontWeight:700, textTransform:'uppercase', letterSpacing:'.5px', marginBottom:6 }}>
+                          Ciclo {ciclo === 'basico' ? 'Básico' : 'Clínico'}
+                        </div>
+                        <div style={{ display:'flex', flexWrap:'wrap', gap:6 }}>
+                          {disciplinas.filter(d => d.ciclo === ciclo).map(d => (
+                            <button key={d.id} onClick={() => toggleDisciplina(d.id)}
+                              style={{ padding:'5px 10px', borderRadius:6, border:'1px solid', borderColor: form.disciplinas.includes(d.id) ? '#6366f1' : 'rgba(0,0,0,0.08)', background: form.disciplinas.includes(d.id) ? 'rgba(99,102,241,0.15)' : 'transparent', color: form.disciplinas.includes(d.id) ? '#7c3aed' : '#64748b', fontSize:11, cursor:'pointer' }}>
+                              {d.nome}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <div style={{ marginBottom:20 }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>

@@ -1,17 +1,21 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Disciplina, Tema } from '@/types'
+import type { Ciclo, Disciplina, Tema } from '@/types'
 
-export async function getAllDisciplinas(): Promise<Disciplina[]> {
+export async function getAllDisciplinas(ciclo?: Ciclo): Promise<Disciplina[]> {
   const supabase = createClient()
-  const { data, error } = await supabase.from('disciplinas').select('*').order('nome')
+  let query = supabase.from('disciplinas').select('*').order('nome')
+  if (ciclo) query = query.eq('ciclo', ciclo)
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }
 
-export async function getDisciplinasByIds(ids: number[]): Promise<Disciplina[]> {
+export async function getDisciplinasByIds(ids: number[], ciclo?: Ciclo): Promise<Disciplina[]> {
   if (!ids.length) return []
   const supabase = createClient()
-  const { data, error } = await supabase.from('disciplinas').select('*').in('id', ids).order('nome')
+  let query = supabase.from('disciplinas').select('*').in('id', ids).order('nome')
+  if (ciclo) query = query.eq('ciclo', ciclo)
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }
@@ -24,9 +28,15 @@ export async function getTemasByDisciplinas(disciplinaIds: number[]): Promise<Te
   return data || []
 }
 
-export async function getAllTemas(): Promise<Tema[]> {
+export async function getAllTemas(ciclo?: Ciclo): Promise<Tema[]> {
   const supabase = createClient()
-  const { data, error } = await supabase.from('temas').select('*').order('disciplina_id').order('ordem')
+  let query = supabase
+    .from('temas')
+    .select('*, disciplinas!inner(ciclo)')
+    .order('disciplina_id')
+    .order('ordem')
+  if (ciclo) query = query.eq('disciplinas.ciclo', ciclo)
+  const { data, error } = await query
   if (error) throw error
-  return data || []
+  return (data || []) as unknown as Tema[]
 }

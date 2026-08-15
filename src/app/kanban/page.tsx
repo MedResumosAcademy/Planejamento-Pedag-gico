@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
+import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
+import { useSession } from '@/hooks/useSession'
+import { CICLOS } from '@/lib/cycles'
 
 type Status = 'pendente' | 'em_andamento' | 'concluido'
 
@@ -8,15 +11,16 @@ interface Tema {
   id:number; disciplina_id:number; disciplina_nome:string; disciplina_cor:string
   ordem:number; tema_especifico:string; paginas:number|null; status_geral:Status
   mat_atualizado:Status; mat_revisado:Status; mat_diagramado:Status; mat_conferencia:Status
-  vid_slide:Status; vid_gravacao:Status; vid_edicao:Status
-  comp_simulado:Status; comp_questoes:Status; comp_flashcards:Status
+  vid_envio_tema:Status; vid_slide_pronto:Status; vid_diagramacao:Status; vid_aprovacao_slide:Status
+  vid_agendamento:Status; vid_gravacao_feita:Status; vid_aprovacao_aula:Status; vid_publicada:Status
+  comp_questoes:Status; comp_flashcards:Status
 }
 
 type Esteira = 'mat'|'vid'|'comp'
 
 const ESTEIRAS = [
   { key:'mat' as Esteira, label:'Materiais', color:'#16a34a', campos:['mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia'] },
-  { key:'vid' as Esteira, label:'Vídeo Aulas', color:'#2563eb', campos:['vid_slide','vid_gravacao','vid_edicao'] },
+  { key:'vid' as Esteira, label:'Vídeo Aulas', color:'#2563eb', campos:['vid_envio_tema','vid_slide_pronto','vid_diagramacao','vid_aprovacao_slide','vid_agendamento','vid_gravacao_feita','vid_aprovacao_aula','vid_publicada'] },
   { key:'comp' as Esteira, label:'Complementos', color:'#d97706', campos:['comp_questoes','comp_flashcards'] },
 ]
 
@@ -34,6 +38,9 @@ function getEsteiraStatus(t: Tema, campos: string[]): Status {
 }
 
 export default function KanbanPage() {
+  const { ciclo } = useCycle()
+  const { loading: sessionLoading, isCoordinator } = useSession()
+  const cycleConfig = CICLOS[ciclo]
   const [temas, setTemas] = useState<Tema[]>([])
   const [loading, setLoading] = useState(true)
   const [esteira, setEsteira] = useState<Esteira>('mat')
@@ -41,11 +48,12 @@ export default function KanbanPage() {
   const [dragOver, setDragOver] = useState<Status|null>(null)
 
   const load = useCallback(async () => {
+    if (sessionLoading) return
     setLoading(true)
-    const r = await fetch('/api/themes')
+    const r = await fetch(`/api/themes${isCoordinator ? `?ciclo=${ciclo}` : ''}`)
     setTemas(await r.json())
     setLoading(false)
-  }, [])
+  }, [ciclo, isCoordinator, sessionLoading])
 
   useEffect(() => { load() }, [load])
 
@@ -67,10 +75,11 @@ export default function KanbanPage() {
   return (
     <div style={{ minHeight:'100vh', background:'#f4f6fb' }}>
       {/* Header */}
-      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(10,13,20,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'14px 32px', display:'flex', alignItems:'center', gap:16 }}>
+      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(244,246,251,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'14px 32px', display:'flex', alignItems:'center', gap:16 }}>
         <Link href="/" style={{ textDecoration:'none', color:'#64748b', fontSize:13 }}>← Dashboard</Link>
         <div style={{ width:1, height:20, background:'rgba(0,0,0,0.1)' }} />
         <h1 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:0 }}>Kanban</h1>
+        {isCoordinator && <CycleSwitcher compact />}
         <div style={{ display:'flex', gap:8, marginLeft:16 }}>
           {ESTEIRAS.map(ex => (
             <button key={ex.key} onClick={()=>setEsteira(ex.key)} style={{ padding:'7px 16px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit', fontWeight:600, background:esteira===ex.key?`${ex.color}20`:'rgba(0,0,0,0.04)', border:esteira===ex.key?`1px solid ${ex.color}60`:'1px solid rgba(0,0,0,0.08)', color:esteira===ex.key?ex.color:'#64748b', transition:'all 0.15s' }}>
@@ -78,7 +87,7 @@ export default function KanbanPage() {
             </button>
           ))}
         </div>
-        <div style={{ marginLeft:'auto', fontSize:13, color:'#94a3b8' }}>{loading?'Carregando...':`${temas.length} temas`}</div>
+        <div style={{ marginLeft:'auto', fontSize:13, color:'#94a3b8' }}>{loading?'Carregando...':`${temas.length} temas · ${isCoordinator ? cycleConfig.label : 'minhas disciplinas'}`}</div>
       </div>
 
       <div style={{ padding:'24px 32px' }}>

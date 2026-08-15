@@ -6,6 +6,8 @@ import { getGravacoesByWeek, createGravacao, updateGravacao } from '@/lib/reposi
 import { getAllDisciplinas, getAllTemas, getDisciplinasByIds } from '@/lib/repositories/disciplinas'
 import RecordingDetailModal from '@/components/RecordingDetailModal'
 import BackButton from '@/components/BackButton'
+import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
+import { CICLOS } from '@/lib/cycles'
 import type { Gravacao, Disciplina, Tema } from '@/types'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -30,6 +32,8 @@ function getPeriod(iso: string): 'manha' | 'tarde' | 'noite' {
 }
 
 export default function AgendaPage() {
+  const { ciclo } = useCycle()
+  const cycleConfig = CICLOS[ciclo]
   const { session, loading: sessionLoading, isCoordinator, isProfessor } = useSession()
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
@@ -48,19 +52,23 @@ export default function AgendaPage() {
     try {
       const start = weekDates[0].toISOString().split('T')[0]
       const end = weekDates[6].toISOString().split('T')[0]
+      const managerCycle = isCoordinator ? ciclo : undefined
       const [gravs, discs, ts] = await Promise.all([
-        getGravacoesByWeek(start, end),
-        isProfessor && session.disciplina_ids?.length ? getDisciplinasByIds(session.disciplina_ids) : getAllDisciplinas(),
-        getAllTemas(),
+        getGravacoesByWeek(start, end, managerCycle),
+        isProfessor && session.disciplina_ids?.length ? getDisciplinasByIds(session.disciplina_ids) : getAllDisciplinas(managerCycle),
+        getAllTemas(managerCycle),
       ])
       setGravacoes(gravs)
       setDisciplinas(discs)
       setTemas(ts)
     } catch (e) { console.error('Failed to load agenda:', e) }
     setLoading(false)
-  }, [weekOffset, session])
+  }, [weekOffset, session, isCoordinator, isProfessor, ciclo])
 
   useEffect(() => { load() }, [load])
+  useEffect(() => {
+    setForm({ disciplina_id: 0, tema_id: 0, data: '', hora: '09:00', duracao_minutos: 60, observacoes: '' })
+  }, [ciclo])
 
   async function handleSubmit() {
     if (!form.disciplina_id || !form.tema_id || !form.data || !session) return
@@ -90,9 +98,10 @@ export default function AgendaPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <div>
             <h1 style={{ fontSize: 24, fontWeight: 700, color: '#0f172a', margin: 0 }}>📅 Recording Schedule</h1>
-            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Shared weekly calendar — all professors</p>
+            <p style={{ fontSize: 13, color: '#64748b', marginTop: 4 }}>Calendário semanal · {isCoordinator ? cycleConfig.label : 'todas as suas disciplinas'}</p>
           </div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {isCoordinator && <CycleSwitcher compact />}
             <button onClick={() => setWeekOffset(w => w - 1)} style={{ background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '8px 14px', color: '#475569', cursor: 'pointer' }}>←</button>
             <span style={{ fontSize: 12, color: '#64748b', minWidth: 140, textAlign: 'center' }}>
               {weekDates[0].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} – {weekDates[6].toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}

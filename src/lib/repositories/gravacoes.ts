@@ -1,15 +1,17 @@
 import { createClient } from '@/lib/supabase/client'
-import type { Gravacao, RecordingStatus, ExternalLink } from '@/types'
+import type { Ciclo, Gravacao, RecordingStatus, ExternalLink } from '@/types'
 
 // Always returns ALL recordings for the week — everyone sees everyone's schedule
-export async function getGravacoesByWeek(startDate: string, endDate: string): Promise<Gravacao[]> {
+export async function getGravacoesByWeek(startDate: string, endDate: string, ciclo?: Ciclo): Promise<Gravacao[]> {
   const supabase = createClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from('gravacoes')
-    .select('*, colaboradores(nome), disciplinas(nome, cor), temas(tema_especifico)')
+    .select('*, colaboradores(nome), disciplinas!inner(nome, cor, ciclo), temas(tema_especifico)')
     .gte('data_hora', startDate)
     .lte('data_hora', endDate + 'T23:59:59')
     .order('data_hora')
+  if (ciclo) query = query.eq('disciplinas.ciclo', ciclo)
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }
@@ -40,14 +42,16 @@ export async function createGravacao(payload: {
 }
 
 // Recordings within an explicit datetime range (used by the management dashboard).
-export async function getGravacoesRange(startDate: string, endDate: string): Promise<Gravacao[]> {
+export async function getGravacoesRange(startDate: string, endDate: string, ciclo?: Ciclo): Promise<Gravacao[]> {
   const supabase = createClient()
-  const { data, error } = await supabase
+  let query = supabase
     .from('gravacoes')
-    .select('*, colaboradores(nome), disciplinas(nome, cor), temas(tema_especifico)')
+    .select('*, colaboradores(nome), disciplinas!inner(nome, cor, ciclo), temas(tema_especifico)')
     .gte('data_hora', startDate)
     .lte('data_hora', endDate + 'T23:59:59')
     .order('data_hora')
+  if (ciclo) query = query.eq('disciplinas.ciclo', ciclo)
+  const { data, error } = await query
   if (error) throw error
   return data || []
 }

@@ -5,10 +5,9 @@ import { getAllDisciplinas, getAllTemas } from '@/lib/repositories/disciplinas'
 import { getAllColaboradores } from '@/lib/repositories/colaboradores'
 import { getGravacoesRange } from '@/lib/repositories/gravacoes'
 import * as A from '@/lib/analytics'
-import type { Disciplina, Tema, Gravacao, Colaborador } from '@/types'
+import { CICLOS } from '@/lib/cycles'
+import type { Ciclo, Disciplina, Tema, Gravacao, Colaborador } from '@/types'
 
-// Meta de término do ciclo (ajustável).
-const TARGET = '2026-10-31'
 const DAY = 86400000
 const fmt = (iso: string | null, o: Intl.DateTimeFormatOptions = { day: '2-digit', month: 'short' }) =>
   iso ? new Date(iso).toLocaleDateString('pt-BR', o) : '—'
@@ -19,7 +18,8 @@ function avColor(id: string) {
 }
 const Info = ({ t }: { t: string }) => <span className="i" title={t}>i</span>
 
-export default function GerencialDashboard() {
+export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
+  const cycleConfig = CICLOS[ciclo ?? 'basico']
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
   const [temas, setTemas] = useState<Tema[]>([])
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
@@ -29,7 +29,7 @@ export default function GerencialDashboard() {
   const [profId, setProfId] = useState<string | null>(null)
   const [drill, setDrill] = useState<{ type: string; id?: any; title: string } | null>(null)
   const today = useMemo(() => new Date(), [])
-  const target = useMemo(() => new Date(TARGET + 'T00:00:00'), [])
+  const target = useMemo(() => new Date(cycleConfig.target + 'T00:00:00'), [cycleConfig.target])
 
   useEffect(() => {
     (async () => {
@@ -38,13 +38,19 @@ export default function GerencialDashboard() {
         const start = new Date(today.getTime() - 12 * 7 * DAY).toISOString().slice(0, 10)
         const end = new Date(today.getTime() + 5 * 7 * DAY).toISOString().slice(0, 10)
         const [d, t, c, g] = await Promise.all([
-          getAllDisciplinas(), getAllTemas(), getAllColaboradores(), getGravacoesRange(start, end),
+          getAllDisciplinas(ciclo), getAllTemas(ciclo), getAllColaboradores(), getGravacoesRange(start, end, ciclo),
         ])
         setDisciplinas(d); setTemas(t); setColaboradores(c); setGravacoes(g)
       } catch (e) { console.error('Falha ao carregar o painel:', e) }
       setLoading(false)
     })()
-  }, [today])
+  }, [today, ciclo])
+
+  useEffect(() => {
+    setDiscId(null)
+    setProfId(null)
+    setDrill(null)
+  }, [ciclo])
 
   const F: A.Filter = { discId, profId }
   const professores = colaboradores.filter(c => c.nivel === 'professor')
@@ -81,7 +87,7 @@ export default function GerencialDashboard() {
     if (!drill) return ''
     switch (drill.type) {
       case 'progresso': return `${k.doneStages} de ${k.totalStages} etapas concluídas`
-      case 'previsao': return `projeção no ritmo atual vs. meta ${fmt(TARGET, { day: '2-digit', month: 'short', year: 'numeric' })}`
+      case 'previsao': return `projeção no ritmo atual vs. meta ${fmt(cycleConfig.target + 'T00:00:00', { day: '2-digit', month: 'short', year: 'numeric' })}`
       case 'velocidade': return `~${k.velocity.toFixed(0)} etapas/semana · estimativa (sem histórico por etapa)`
       case 'gravacoes': return `${k.gravFeitas} concluídas · ${k.gravAgendadas} agendadas`
       case 'pendencias': return 'gravações que dependem de decisão'
@@ -134,7 +140,7 @@ export default function GerencialDashboard() {
     }
     if (drill.type === 'prof') {
       const c = colaboradores.find(x => x.id === drill.id)
-      const dids = c?.professor_disciplinas?.map(d => d.disciplina_id) ?? []
+      const dids = (c?.professor_disciplinas?.map(d => d.disciplina_id) ?? []).filter(id => discById.has(id))
       return dids.length ? dids.map(id => { const dd = discById.get(id); const r = risk.find(x => x.id === id); return (<div key={id} className="drow"><span className="dl" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><i style={{ width: 8, height: 8, borderRadius: 2, background: dd?.cor, display: 'inline-block' }} />{dd?.nome}</span><span className="dbar"><i style={{ width: (r?.pct || 0) + '%', background: dd?.cor }} /></span><span className="dv">{r?.pct || 0}%</span></div>) }) : <div className="empty">Sem disciplinas atribuídas.</div>
     }
     return null
@@ -145,7 +151,7 @@ export default function GerencialDashboard() {
       <style>{CSS}</style>
 
       <div className="hd">
-        <h1>Painel do Gestor <span className="muted2">· {discId ? discById.get(discId)?.nome : 'visão geral'}{profId ? ' · ' + profById.get(profId)?.nome : ''}</span></h1>
+        <h1>Painel do Gestor <span className="muted2">· {cycleConfig.label} · {discId ? discById.get(discId)?.nome : 'visão geral'}{profId ? ' · ' + profById.get(profId)?.nome : ''}</span></h1>
         <div className="flt">
           <select value={discId ?? 'all'} onChange={e => setDiscId(e.target.value === 'all' ? null : +e.target.value)}>
             <option value="all">Todas as disciplinas</option>

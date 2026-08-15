@@ -1,0 +1,631 @@
+-- Integra o Ciclo Clinico 2026 ao mesmo modelo do Ciclo Basico.
+-- Fonte: CONTROLE MRA-CICLO CLINICO-2026.xlsx
+-- Reconciliacao da fonte: 29 disciplinas, 410 temas e 3.859 paginas.
+
+begin;
+
+set local lock_timeout = '5s';
+set local statement_timeout = '60s';
+
+-- Snapshot transacional dos dados preexistentes.
+-- O campo ciclo e removido do payload porque ele sera adicionado/preenchido abaixo.
+-- Em uma reaplicacao, ciclo_original preserva a classificacao que ja existia.
+create temporary table _ciclo_clinico_baseline_disciplinas
+on commit drop
+as
+select d.id,
+       to_jsonb(d) - 'ciclo' as payload,
+       to_jsonb(d) ->> 'ciclo' as ciclo_original
+from public.disciplinas d;
+
+create temporary table _ciclo_clinico_baseline_temas
+on commit drop
+as
+select t.id,
+       to_jsonb(t) as payload
+from public.temas t;
+
+alter table public.disciplinas
+  add column if not exists ciclo text;
+
+update public.disciplinas
+set ciclo = 'basico'
+where ciclo is null;
+
+alter table public.disciplinas
+  alter column ciclo set default 'basico',
+  alter column ciclo set not null;
+
+do $$
+begin
+  if not exists (
+    select 1
+    from pg_constraint
+    where conname = 'disciplinas_ciclo_check'
+      and conrelid = 'public.disciplinas'::regclass
+  ) then
+    alter table public.disciplinas
+      add constraint disciplinas_ciclo_check
+      check (ciclo in ('basico', 'clinico'));
+  end if;
+end
+$$;
+
+create index if not exists disciplinas_ciclo_nome_idx
+  on public.disciplinas (ciclo, nome);
+
+with source_disciplines (nome, cor, total_temas, total_paginas) as (
+  values
+    ('ANESTESIOLOGIA', '#0f766e', 11, 102),
+    ('CARDIOLOGIA', '#0369a1', 13, 227),
+    ('CIRURGIA ABDOMINAL', '#7c3aed', 12, 74),
+    ('CIRURGIA CABEÇA E PESCOÇO', '#be123c', 10, 99),
+    ('CIRURGIA PEDIÁTRICA', '#b45309', 6, 47),
+    ('CIRURGIA TORÁCICA', '#047857', 17, 150),
+    ('DERMATOLOGIA', '#1d4ed8', 14, 146),
+    ('ENDOCRINOLOGIA', '#a21caf', 23, 190),
+    ('GASTROENTEROLOGIA', '#c2410c', 15, 137),
+    ('GERIATRIA', '#4338ca', 7, 45),
+    ('GINECOLOGIA', '#0e7490', 22, 170),
+    ('HEMATOLOGIA', '#15803d', 23, 166),
+    ('INFECTOLOGIA', '#0f766e', 14, 166),
+    ('MEDICINA DE URGÊNCIA', '#0369a1', 14, 197),
+    ('NEFROLOGIA', '#7c3aed', 10, 129),
+    ('NEONATOLOGIA', '#be123c', 17, 140),
+    ('NEUROLOGIA', '#b45309', 20, 255),
+    ('OBSTETRÍCIA', '#047857', 19, 130),
+    ('OFTALMOLOGIA', '#1d4ed8', 12, 69),
+    ('ONCOLOGIA', '#a21caf', 15, 119),
+    ('ORTOPEDIA', '#c2410c', 19, 156),
+    ('OTORRINOLARINGOLOGIA', '#4338ca', 8, 78),
+    ('PATOLOGIA', '#0e7490', 11, 86),
+    ('PEDIATRIA', '#15803d', 12, 110),
+    ('PNEUMOLOGIA', '#0f766e', 23, 215),
+    ('PSIQUIATRIA', '#0369a1', 10, 88),
+    ('RADIOLOGIA', '#7c3aed', 7, 119),
+    ('REUMATOLOGIA', '#be123c', 11, 85),
+    ('UROLOGIA', '#b45309', 15, 164)
+)
+insert into public.disciplinas (nome, cor, microassunto, total_temas, total_paginas, ciclo)
+select s.nome, s.cor, null, s.total_temas, s.total_paginas, 'clinico'
+from source_disciplines s
+where not exists (
+  select 1
+  from public.disciplinas d
+  where d.ciclo = 'clinico'
+    and lower(trim(d.nome)) = lower(trim(s.nome))
+);
+
+with source_disciplines (nome, cor, total_temas, total_paginas) as (
+  values
+    ('ANESTESIOLOGIA', '#0f766e', 11, 102),
+    ('CARDIOLOGIA', '#0369a1', 13, 227),
+    ('CIRURGIA ABDOMINAL', '#7c3aed', 12, 74),
+    ('CIRURGIA CABEÇA E PESCOÇO', '#be123c', 10, 99),
+    ('CIRURGIA PEDIÁTRICA', '#b45309', 6, 47),
+    ('CIRURGIA TORÁCICA', '#047857', 17, 150),
+    ('DERMATOLOGIA', '#1d4ed8', 14, 146),
+    ('ENDOCRINOLOGIA', '#a21caf', 23, 190),
+    ('GASTROENTEROLOGIA', '#c2410c', 15, 137),
+    ('GERIATRIA', '#4338ca', 7, 45),
+    ('GINECOLOGIA', '#0e7490', 22, 170),
+    ('HEMATOLOGIA', '#15803d', 23, 166),
+    ('INFECTOLOGIA', '#0f766e', 14, 166),
+    ('MEDICINA DE URGÊNCIA', '#0369a1', 14, 197),
+    ('NEFROLOGIA', '#7c3aed', 10, 129),
+    ('NEONATOLOGIA', '#be123c', 17, 140),
+    ('NEUROLOGIA', '#b45309', 20, 255),
+    ('OBSTETRÍCIA', '#047857', 19, 130),
+    ('OFTALMOLOGIA', '#1d4ed8', 12, 69),
+    ('ONCOLOGIA', '#a21caf', 15, 119),
+    ('ORTOPEDIA', '#c2410c', 19, 156),
+    ('OTORRINOLARINGOLOGIA', '#4338ca', 8, 78),
+    ('PATOLOGIA', '#0e7490', 11, 86),
+    ('PEDIATRIA', '#15803d', 12, 110),
+    ('PNEUMOLOGIA', '#0f766e', 23, 215),
+    ('PSIQUIATRIA', '#0369a1', 10, 88),
+    ('RADIOLOGIA', '#7c3aed', 7, 119),
+    ('REUMATOLOGIA', '#be123c', 11, 85),
+    ('UROLOGIA', '#b45309', 15, 164)
+)
+update public.disciplinas d
+set cor = s.cor,
+    total_temas = s.total_temas,
+    total_paginas = s.total_paginas
+from source_disciplines s
+where d.ciclo = 'clinico'
+  and lower(trim(d.nome)) = lower(trim(s.nome));
+
+-- Na planilha clinica, MICROASSUNTO e o nome operacional do tema.
+-- TEMA ESPECIFICO esta vazio, portanto o sistema preserva o microassunto como tema_especifico.
+with source_topics (disciplina_nome, ordem, tema_especifico, paginas) as (
+  values
+    ('ANESTESIOLOGIA', 1, 'INTRODUÇÃO E HISTÓRICO', 4),
+    ('ANESTESIOLOGIA', 2, 'AVALIAÇÃO PRÉ-ANESTÉSICA', 8),
+    ('ANESTESIOLOGIA', 3, 'ENTUBAÇÃO OROTRAQUEAL', 11),
+    ('ANESTESIOLOGIA', 4, 'BLOQUEADORES NEUROMUSCULARES', 12),
+    ('ANESTESIOLOGIA', 5, 'ANESTÉSICOS LOCAIS', 7),
+    ('ANESTESIOLOGIA', 6, 'ANESTESIA SUBARACNÓIDEA', 9),
+    ('ANESTESIOLOGIA', 7, 'ANESTESIA PERIDURAL', 4),
+    ('ANESTESIOLOGIA', 8, 'ANESTESIA INALATÓRIA', 11),
+    ('ANESTESIOLOGIA', 9, 'ANESTESIA VENOSA', 12),
+    ('ANESTESIOLOGIA', 10, 'ANESTESIA AMBULATORIAL', 13),
+    ('ANESTESIOLOGIA', 11, 'MONITORIZAÇÃO ANESTÉSICA', 11),
+    ('CARDIOLOGIA', 1, 'SEMIOLOGIA CARDÍACA', 14),
+    ('CARDIOLOGIA', 2, 'EXAMES COMPLEMENTARES EM CARDIOLOGIA', 18),
+    ('CARDIOLOGIA', 3, 'HIPERTENSÃO ARTERIAL SISTÊMICA', 100),
+    ('CARDIOLOGIA', 4, 'EDEMA AGUDO DE PULMÃO', 10),
+    ('CARDIOLOGIA', 5, 'FEBRE REUMÁTICA', 6),
+    ('CARDIOLOGIA', 6, 'ENDOCARDITE INFECCIOSA', 6),
+    ('CARDIOLOGIA', 7, 'SÍNDROMES CORONARIANAS AGUDAS', 13),
+    ('CARDIOLOGIA', 8, 'SÍNDROMES CORONARIANAS CRÔNICAS', 12),
+    ('CARDIOLOGIA', 9, 'INSUFICIÊNCIA CARDÍACA', 9),
+    ('CARDIOLOGIA', 10, 'VALVOPATIAS', 16),
+    ('CARDIOLOGIA', 11, 'MIOCARDIOPATIAS', 9),
+    ('CARDIOLOGIA', 12, 'PERICARDIOPATIAS', 6),
+    ('CARDIOLOGIA', 13, 'CARDIOPATIAS CONGÊNITAS', 8),
+    ('CIRURGIA ABDOMINAL', 1, 'CIRURGIA BARIÁTRICA', 14),
+    ('CIRURGIA ABDOMINAL', 2, 'DOENÇA DIVERTICULAR DO CÓLON', 3),
+    ('CIRURGIA ABDOMINAL', 3, 'DIVERTICULITE', 3),
+    ('CIRURGIA ABDOMINAL', 4, 'DOENÇA HEMORROIDÁRIA', 6),
+    ('CIRURGIA ABDOMINAL', 5, 'FISSURA ANAL', 4),
+    ('CIRURGIA ABDOMINAL', 6, 'PANCREATITE AGUDA', 10),
+    ('CIRURGIA ABDOMINAL', 7, 'PANCREATITE CRÔNICA', 5),
+    ('CIRURGIA ABDOMINAL', 8, 'CÂNCER DE PÂNCREAS E DUODENO', 7),
+    ('CIRURGIA ABDOMINAL', 9, 'CÂNCER HEPÁTICO', 1),
+    ('CIRURGIA ABDOMINAL', 10, 'TUMOR DE VESÍCULA BILIAR', 5),
+    ('CIRURGIA ABDOMINAL', 11, 'CÂNCER DE DUCTOS BILIARES', 7),
+    ('CIRURGIA ABDOMINAL', 12, 'CÂNCER COLORRETAL', 9),
+    ('CIRURGIA CABEÇA E PESCOÇO', 1, 'FUNDAMENTOS DA CIRURGIA DE CABEÇA E PESCOÇO', 17),
+    ('CIRURGIA CABEÇA E PESCOÇO', 2, 'TRAUMA DE FACE E PESCOÇO', 6),
+    ('CIRURGIA CABEÇA E PESCOÇO', 3, 'LESÕES CONGÊNITAS E ADENOPATIAS CERVICAIS', 9),
+    ('CIRURGIA CABEÇA E PESCOÇO', 4, 'LESÕES ORAIS', 9),
+    ('CIRURGIA CABEÇA E PESCOÇO', 5, 'OBSTRUÇÃO NASAL', 13),
+    ('CIRURGIA CABEÇA E PESCOÇO', 6, 'DISFONIAS E LESÕES DA LARINGE', 14),
+    ('CIRURGIA CABEÇA E PESCOÇO', 7, 'DISFAGIA E LESÕES DA FARINGE', 8),
+    ('CIRURGIA CABEÇA E PESCOÇO', 8, 'MASSAS SALIVARES', 7),
+    ('CIRURGIA CABEÇA E PESCOÇO', 9, 'SINUSITE E TUMOR DE SEIOS PARANASAIS', 3),
+    ('CIRURGIA CABEÇA E PESCOÇO', 10, 'TUMORES DA TIREOIDE', 13),
+    ('CIRURGIA PEDIÁTRICA', 1, 'PRÉ E PÓS-OPERATÓRIO', 5),
+    ('CIRURGIA PEDIÁTRICA', 2, 'PATOLOGIAS CIRÚRGICAS DO TÓRAX DA CRIANÇA', 7),
+    ('CIRURGIA PEDIÁTRICA', 3, 'REGIÃO INGUINAL E GENITÁLIA EXTERNA', 11),
+    ('CIRURGIA PEDIÁTRICA', 4, 'DEFEITOS DA PAREDE ABDOMINAL', 5),
+    ('CIRURGIA PEDIÁTRICA', 5, 'ABDOME AGUDO', 10),
+    ('CIRURGIA PEDIÁTRICA', 6, 'ANOMALIAS DAS VIAS URINÁRIAS', 9),
+    ('CIRURGIA TORÁCICA', 1, 'TRAUMA DE TÓRAX', 1),
+    ('CIRURGIA TORÁCICA', 2, 'ANATOMIA DO TÓRAX', 12),
+    ('CIRURGIA TORÁCICA', 3, 'ABORDAGEM IMAGENOLÓGICA DO TÓRAX', 21),
+    ('CIRURGIA TORÁCICA', 4, 'AVALIAÇÃO PRÉ-OPERATÓRIA', 8),
+    ('CIRURGIA TORÁCICA', 5, 'HIPERIDROSE', 5),
+    ('CIRURGIA TORÁCICA', 6, 'PATOLOGIAS DA TRAQUEIA', 13),
+    ('CIRURGIA TORÁCICA', 7, 'PATOLOGIAS CONGÊNITAS DO PULMÃO', 10),
+    ('CIRURGIA TORÁCICA', 8, 'ABSCESSO PULMONAR', 4),
+    ('CIRURGIA TORÁCICA', 9, 'BRONQUIECTASIAS', 8),
+    ('CIRURGIA TORÁCICA', 10, 'TUMORES PRIMÁRIOS DA PAREDE TORÁCICA', 8),
+    ('CIRURGIA TORÁCICA', 11, 'METÁSTASES PULMONARES', 6),
+    ('CIRURGIA TORÁCICA', 12, 'CÂNCER DE PULMÃO', 14),
+    ('CIRURGIA TORÁCICA', 13, 'TUMORES MENOS FREQUENTES DE PULMÃO', 7),
+    ('CIRURGIA TORÁCICA', 14, 'MESOTELIOMA PLEURAL', 7),
+    ('CIRURGIA TORÁCICA', 15, 'EMPIEMA PLEURAL', 7),
+    ('CIRURGIA TORÁCICA', 16, 'PNEUMOTÓRAX', 8),
+    ('CIRURGIA TORÁCICA', 17, 'MASSAS MEDIASTINAIS', 11),
+    ('DERMATOLOGIA', 1, 'ANATOMIA E FISIOLOGIA DA PELE', 14),
+    ('DERMATOLOGIA', 2, 'SEMIOLOGIA DERMATOLÓGICA', 19),
+    ('DERMATOLOGIA', 3, 'LESÕES ERITEMATOESCAMOSAS', 11),
+    ('DERMATOLOGIA', 4, 'LESÕES ECZEMATOSAS', 7),
+    ('DERMATOLOGIA', 5, 'HANSENÍASE', 14),
+    ('DERMATOLOGIA', 6, 'ACNE', 9),
+    ('DERMATOLOGIA', 7, 'ROSÁCEA', 3),
+    ('DERMATOLOGIA', 8, 'PIODERMITES', 12),
+    ('DERMATOLOGIA', 9, 'DERMATOZOONOSES', 6),
+    ('DERMATOLOGIA', 10, 'DERMATOVIROSES', 16),
+    ('DERMATOLOGIA', 11, 'MICOSES SUPERFICIAIS', 10),
+    ('DERMATOLOGIA', 12, 'COLAGENOSES', 9),
+    ('DERMATOLOGIA', 13, 'FARMACODERMIAS', 8),
+    ('DERMATOLOGIA', 14, 'NEOPLASIAS CUTÂNEAS', 8),
+    ('ENDOCRINOLOGIA', 1, 'INTRODUÇÃO E VALORES DE REFERÊNCIA', 3),
+    ('ENDOCRINOLOGIA', 2, 'DIABETES MELLITUS', 37),
+    ('ENDOCRINOLOGIA', 3, 'METABOLISMO DOS LIPÍDIOS E DISLIPIDEMIAS', 17),
+    ('ENDOCRINOLOGIA', 4, 'OBESIDADE', 2),
+    ('ENDOCRINOLOGIA', 5, 'SÍNDROME METABÓLICA', 2),
+    ('ENDOCRINOLOGIA', 6, 'DOENÇAS DAS PARATIREOIDES', 5),
+    ('ENDOCRINOLOGIA', 7, 'OSTEOPOROSE', 8),
+    ('ENDOCRINOLOGIA', 8, 'DOENÇAS DA TIREOIDE', 18),
+    ('ENDOCRINOLOGIA', 9, 'NÓDULOS DE TIREOIDE', 13),
+    ('ENDOCRINOLOGIA', 10, 'TIREOIDITES', 6),
+    ('ENDOCRINOLOGIA', 11, 'DIABETES INSIPIDUS', 7),
+    ('ENDOCRINOLOGIA', 12, 'SIHAD', 4),
+    ('ENDOCRINOLOGIA', 13, 'HIPERPROLACTINEMIA', 5),
+    ('ENDOCRINOLOGIA', 14, 'ACROMEGALIA', 6),
+    ('ENDOCRINOLOGIA', 15, 'SÍNDROME DE CUSHING', 7),
+    ('ENDOCRINOLOGIA', 16, 'INSUFICIÊNCIA ADRENAL', 4),
+    ('ENDOCRINOLOGIA', 17, 'HIPERTENSÃO ENDÓCRINA', 10),
+    ('ENDOCRINOLOGIA', 18, 'HIPERPLASIA ADRENAL CONGÊNITA', 7),
+    ('ENDOCRINOLOGIA', 19, 'INCIDENTALOMA DE ADRENAL', 4),
+    ('ENDOCRINOLOGIA', 20, 'PUBERDADE PRECOCE', 5),
+    ('ENDOCRINOLOGIA', 21, 'ATRASO PUBERAL', 5),
+    ('ENDOCRINOLOGIA', 22, 'BAIXA ESTATURA', 12),
+    ('ENDOCRINOLOGIA', 23, 'HIRSUTISMO', 3),
+    ('GASTROENTEROLOGIA', 1, 'DRGE', 10),
+    ('GASTROENTEROLOGIA', 2, 'DISPEPSIA', 5),
+    ('GASTROENTEROLOGIA', 3, 'GASTRITES', 7),
+    ('GASTROENTEROLOGIA', 4, 'ÚLCERA PÉPTICA', 8),
+    ('GASTROENTEROLOGIA', 5, 'DISTÚRBIOS MOTORES DO ESÔFAGO', 10),
+    ('GASTROENTEROLOGIA', 6, 'HEPATITES VIRAIS AGUDAS', 8),
+    ('GASTROENTEROLOGIA', 7, 'HEPATITES CRÔNICAS', 8),
+    ('GASTROENTEROLOGIA', 8, 'ESTEATOSE HEPÁTICA NÃO ALCOÓLICA', 10),
+    ('GASTROENTEROLOGIA', 9, 'CIRROSE HEPÁTICA', 13),
+    ('GASTROENTEROLOGIA', 10, 'HIPERTENSÃO PORTAL', 9),
+    ('GASTROENTEROLOGIA', 11, 'PANCREATITE AGUDA', 9),
+    ('GASTROENTEROLOGIA', 12, 'PANCREATITE CRÔNICA', 4),
+    ('GASTROENTEROLOGIA', 13, 'DIARREIA AGUDA E CRÔNICA', 17),
+    ('GASTROENTEROLOGIA', 14, 'CONSTIPAÇÃO', 10),
+    ('GASTROENTEROLOGIA', 15, 'DOENÇA INFLAMATÓRIA INTESTINAL', 9),
+    ('GERIATRIA', 1, 'HISTÓRICO E EPIDEMIOLOGIA', 5),
+    ('GERIATRIA', 2, 'AVALIAÇÃO GERIÁTRICA AMPLA', 5),
+    ('GERIATRIA', 3, 'DEPRESSÃO', 11),
+    ('GERIATRIA', 4, 'DEMÊNCIA DE ALZHEIMER', 8),
+    ('GERIATRIA', 5, 'DEMÊNCIA VASCULAR', 5),
+    ('GERIATRIA', 6, 'DELIRIUM', 7),
+    ('GERIATRIA', 7, 'SÍNDROME DA IMOBILIZAÇÃO', 4),
+    ('GINECOLOGIA', 1, 'SEMIOLOGIA GINECOLÓGICA', 14),
+    ('GINECOLOGIA', 2, 'ANATOMIA GINECOLÓGICA', 6),
+    ('GINECOLOGIA', 3, 'CICLO MENSTRUAL', 6),
+    ('GINECOLOGIA', 4, 'DOENÇA INFLAMATÓRIA PÉLVICA', 6),
+    ('GINECOLOGIA', 5, 'SÍNDROME DO OVÁRIO POLICÍSTICO', 5),
+    ('GINECOLOGIA', 6, 'ENDOMETRIOSE', 6),
+    ('GINECOLOGIA', 7, 'HEMORRAGIA UTERINA DISFUNCIONAL', 7),
+    ('GINECOLOGIA', 8, 'SEXUALIDADE HUMANA', 7),
+    ('GINECOLOGIA', 9, 'VIOLÊNCIA SEXUAL CONTRA MULHERES', 4),
+    ('GINECOLOGIA', 10, 'PLANEJAMENTO FAMILIAR', 8),
+    ('GINECOLOGIA', 11, 'INFERTILIDADE', 4),
+    ('GINECOLOGIA', 12, 'DISMENORREIA', 4),
+    ('GINECOLOGIA', 13, 'TPM', 5),
+    ('GINECOLOGIA', 14, 'DST', 21),
+    ('GINECOLOGIA', 15, 'VULVOVAGINITES', 7),
+    ('GINECOLOGIA', 16, 'DISTOPIAS GENITAIS', 6),
+    ('GINECOLOGIA', 17, 'CLIMATÉRIO', 8),
+    ('GINECOLOGIA', 18, 'PATOLOGIAS BENIGNAS DOS OVÁRIOS', 9),
+    ('GINECOLOGIA', 19, 'PATOLOGIAS MALIGNAS DOS OVÁRIOS', 9),
+    ('GINECOLOGIA', 20, 'LEIOMIOMA UTERINO', 6),
+    ('GINECOLOGIA', 21, 'CÂNCER DE ENDOMÉTRIO', 6),
+    ('GINECOLOGIA', 22, 'NEOPLASIA DO COLO UTERINO', 16),
+    ('HEMATOLOGIA', 1, 'SISTEMA SANGUÍNEO E HEMATOPOIESE', 11),
+    ('HEMATOLOGIA', 2, 'SISTEMA ABO', 6),
+    ('HEMATOLOGIA', 3, 'HEMOGRAMA', 17),
+    ('HEMATOLOGIA', 4, 'ABORDAGEM GERAL DAS ANEMIAS', 9),
+    ('HEMATOLOGIA', 5, 'ANEMIA FERROPRIVA', 6),
+    ('HEMATOLOGIA', 6, 'ANEMIA APLÁSTICA', 7),
+    ('HEMATOLOGIA', 7, 'ANEMIAS MEGALOBLÁSTICAS', 6),
+    ('HEMATOLOGIA', 8, 'ANEMIA FALCIFORME', 5),
+    ('HEMATOLOGIA', 9, 'TALASSEMIA', 7),
+    ('HEMATOLOGIA', 10, 'ESFEROCITOSE HEREDITÁRIA', 4),
+    ('HEMATOLOGIA', 11, 'ANEMIA HEMOLÍTICA AUTO-IMUNE', 4),
+    ('HEMATOLOGIA', 12, 'HEMOSTASIA PRIMÁRIA E SECUNDÁRIA', 9),
+    ('HEMATOLOGIA', 13, 'PÚRPURAS', 9),
+    ('HEMATOLOGIA', 14, 'COAGULOPATIAS HEREDITÁRIAS', 10),
+    ('HEMATOLOGIA', 15, 'COAGULOPATIAS ADQUIRIDAS', 7),
+    ('HEMATOLOGIA', 16, 'TROMBOFILIAS', 9),
+    ('HEMATOLOGIA', 17, 'DOENÇA MIELOPROLIFERATIVA CRÔNICA', 5),
+    ('HEMATOLOGIA', 18, 'LMA', 8),
+    ('HEMATOLOGIA', 19, 'LMC', 4),
+    ('HEMATOLOGIA', 20, 'LLA', 4),
+    ('HEMATOLOGIA', 21, 'LLC', 3),
+    ('HEMATOLOGIA', 22, 'LINFOMA', 9),
+    ('HEMATOLOGIA', 23, 'DISTÚRBIOS PLASMOCITÁRIOS E MIELOMA MÚLTIPLO', 7),
+    ('INFECTOLOGIA', 1, 'DENGUE', 12),
+    ('INFECTOLOGIA', 2, 'MONONUCLEOSE INFECCIOSA', 6),
+    ('INFECTOLOGIA', 3, 'AIDS', 12),
+    ('INFECTOLOGIA', 4, 'VARICELA E COBREIRO', 5),
+    ('INFECTOLOGIA', 5, 'RAIVA', 6),
+    ('INFECTOLOGIA', 6, 'HEPATITES VIRAIS', 14),
+    ('INFECTOLOGIA', 7, 'FEBRE TIFÓIDE', 5),
+    ('INFECTOLOGIA', 8, 'LEISHMANIOSE VISCERAL', 7),
+    ('INFECTOLOGIA', 9, 'MENINGITES BACTERIANAS AGUDAS', 10),
+    ('INFECTOLOGIA', 10, 'TÉTANO', 6),
+    ('INFECTOLOGIA', 11, 'ESTAFILOCOCCIAS', 11),
+    ('INFECTOLOGIA', 12, 'ESTREPTOCOCCIAS', 11),
+    ('INFECTOLOGIA', 13, 'INFECÇÃO HOSPITALAR', 6),
+    ('INFECTOLOGIA', 14, 'APÊNDICES 1 E 2', 55),
+    ('MEDICINA DE URGÊNCIA', 1, 'AVALIAÇÃO INICIAL AO POLITRAUMATIZADO', 12),
+    ('MEDICINA DE URGÊNCIA', 2, 'MONITORIZAÇÃO HEMODINÂMICA INVASIVA', 22),
+    ('MEDICINA DE URGÊNCIA', 3, 'OFERTA E CONSUMO DE OXIGÊNIO', 12),
+    ('MEDICINA DE URGÊNCIA', 4, 'CHOQUE', 18),
+    ('MEDICINA DE URGÊNCIA', 5, 'DISTÚRBIOS DA VOLEMIA E SOLUÇÕES HIDROELETROLÍTICAS', 6),
+    ('MEDICINA DE URGÊNCIA', 6, 'SEPSE', 13),
+    ('MEDICINA DE URGÊNCIA', 7, 'MANEJO DE VIAS AÉREAS', 8),
+    ('MEDICINA DE URGÊNCIA', 8, 'INTERPRETAÇÃO DOS DISTÚRBIOS ÁCIDO-BASE', 15),
+    ('MEDICINA DE URGÊNCIA', 9, 'EDEMA AGUDO DE PULMÃO', 16),
+    ('MEDICINA DE URGÊNCIA', 10, 'IMAGENS NO TRAUMA', 12),
+    ('MEDICINA DE URGÊNCIA', 11, 'TCE', 14),
+    ('MEDICINA DE URGÊNCIA', 12, 'AVCI', 25),
+    ('MEDICINA DE URGÊNCIA', 13, 'SEDAÇÃO E ANESTESIA NO PACIENTE GRAVE', 11),
+    ('MEDICINA DE URGÊNCIA', 14, 'ACLS - DIRETRIZES 2010', 13),
+    ('NEFROLOGIA', 1, 'FISIOLOGIA RENAL', 15),
+    ('NEFROLOGIA', 2, 'DIAGNÓSTICO SINDRÔMICO', 8),
+    ('NEFROLOGIA', 3, 'EXAMES LABORATORIAIS EM NEFROLOGIA', 16),
+    ('NEFROLOGIA', 4, 'INSUFICIÊNCIA RENAL AGUDA', 12),
+    ('NEFROLOGIA', 5, 'INSUFICIÊNCIA RENAL CRÔNICA', 12),
+    ('NEFROLOGIA', 6, 'SÍNDROMES GLOMERULARES', 22),
+    ('NEFROLOGIA', 7, 'RIM E HIPERTENSÃO', 9),
+    ('NEFROLOGIA', 8, 'NEFROTOXICIDADE POR DROGAS', 14),
+    ('NEFROLOGIA', 9, 'CONDUTAS CLÍNICAS NAS DISNATREMIAS', 10),
+    ('NEFROLOGIA', 10, 'DISCALEMIAS', 11),
+    ('NEONATOLOGIA', 1, 'SEMIOLOGIA DO RN', 10),
+    ('NEONATOLOGIA', 2, 'ASSISTÊNCIA AO RN', 13),
+    ('NEONATOLOGIA', 3, 'RN DISPNEICO', 14),
+    ('NEONATOLOGIA', 4, 'HIPERBILIRRUBINEMIA NEONATAL', 7),
+    ('NEONATOLOGIA', 5, 'ALIMENTAÇÃO INFANTIL', 9),
+    ('NEONATOLOGIA', 6, 'ALEITAMENTO MATERNO', 6),
+    ('NEONATOLOGIA', 7, 'HIDRATAÇÃO DO RN', 8),
+    ('NEONATOLOGIA', 8, 'DISTÚRBIOS METABÓLICOS DO RN', 8),
+    ('NEONATOLOGIA', 9, 'SEPSE E MENINGITE NEONATAL', 10),
+    ('NEONATOLOGIA', 10, 'CRESCIMENTO E DESENVOLVIMENTO', 9),
+    ('NEONATOLOGIA', 11, 'IMUNIZAÇÃO', 16),
+    ('NEONATOLOGIA', 12, 'INFECÇÕES PERINATAIS', 15),
+    ('NEONATOLOGIA', 13, 'CONVULSÕES NEONATAIS', 2),
+    ('NEONATOLOGIA', 14, 'HEMORRAGIA INTRACRANIANA', 2),
+    ('NEONATOLOGIA', 15, 'ANEMIA DO PRÉ-TERMO', 4),
+    ('NEONATOLOGIA', 16, 'DOENÇA HEMORRÁGICA DO RN', 3),
+    ('NEONATOLOGIA', 17, 'RETINOPATIA DA PREMATURIDADE', 4),
+    ('NEUROLOGIA', 1, 'INTRODUÇÃO', 8),
+    ('NEUROLOGIA', 2, 'SEMIOLOGIA NEUROLÓGICA', 44),
+    ('NEUROLOGIA', 3, 'EXAMES COMPLEMENTARES', 18),
+    ('NEUROLOGIA', 4, 'DIAGNÓSTICO TOPOGRÁFICO', 19),
+    ('NEUROLOGIA', 5, 'TCE', 12),
+    ('NEUROLOGIA', 6, 'COMA', 13),
+    ('NEUROLOGIA', 7, 'HIPERTENSÃO INTRACRANIANA', 20),
+    ('NEUROLOGIA', 8, 'TRM', 15),
+    ('NEUROLOGIA', 9, 'MALFORMAÇÃO OCCIPITOCERVICAL', 14),
+    ('NEUROLOGIA', 10, 'AVE', 27),
+    ('NEUROLOGIA', 11, 'EPILEPSIAS', 12),
+    ('NEUROLOGIA', 12, 'DISTÚRBIOS DO MOVIMENTO', 11),
+    ('NEUROLOGIA', 13, 'CEFALEIA', 8),
+    ('NEUROLOGIA', 14, 'DEMÊNCIAS', 7),
+    ('NEUROLOGIA', 15, 'ESCLEROSE MÚLTIPLA', 4),
+    ('NEUROLOGIA', 16, 'ELA', 3),
+    ('NEUROLOGIA', 17, 'MIOPATIAS E NEUROPATIAS', 11),
+    ('NEUROLOGIA', 18, 'HIDROCEFALIA E DISRAFISMOS', 5),
+    ('NEUROLOGIA', 19, 'NEUROPARASITOSES', 2),
+    ('NEUROLOGIA', 20, 'TUMORES CEREBRAIS', 2),
+    ('OBSTETRÍCIA', 1, 'DIAGNÓSTICO DE GRAVIDEZ', 7),
+    ('OBSTETRÍCIA', 2, 'ASSISTÊNCIA PRÉ-NATAL', 9),
+    ('OBSTETRÍCIA', 3, 'ESTUDO DA BACIA', 8),
+    ('OBSTETRÍCIA', 4, 'ESTÁTICA FETAL', 4),
+    ('OBSTETRÍCIA', 5, 'APRESENTAÇÃO CEFÁLICA FLETIDA', 9),
+    ('OBSTETRÍCIA', 6, 'PARTOGRAMA', 8),
+    ('OBSTETRÍCIA', 7, 'FÓRCEPS', 3),
+    ('OBSTETRÍCIA', 8, 'PRENHEZ ECTÓPICA', 4),
+    ('OBSTETRÍCIA', 9, 'ABORTAMENTO', 4),
+    ('OBSTETRÍCIA', 10, 'DESCOLAMENTO PREMATURO DA PLACENTA', 5),
+    ('OBSTETRÍCIA', 11, 'PLACENTA PRÉVIA', 3),
+    ('OBSTETRÍCIA', 12, 'OPERAÇÃO CESARIANA', 6),
+    ('OBSTETRÍCIA', 13, 'PARTO PREMATURO', 12),
+    ('OBSTETRÍCIA', 14, 'AMNIORREXE', 4),
+    ('OBSTETRÍCIA', 15, 'PATOLOGIAS DO LÍQUIDO AMNIÓTICO', 6),
+    ('OBSTETRÍCIA', 16, 'CARDIOTOCOGRAFIA', 10),
+    ('OBSTETRÍCIA', 17, 'SOFRIMENTO FETAL', 8),
+    ('OBSTETRÍCIA', 18, 'VITALIDADE FETAL', 10),
+    ('OBSTETRÍCIA', 19, 'DOENÇA HIPERTENSIVA ESPECÍFICA DA GESTAÇÃO', 10),
+    ('OFTALMOLOGIA', 1, 'ANATOMIA DO OLHO E EXAME FÍSICO', 16),
+    ('OFTALMOLOGIA', 2, 'UVEÍTES', 5),
+    ('OFTALMOLOGIA', 3, 'DOENÇAS DA RETINA', 10),
+    ('OFTALMOLOGIA', 4, 'GLAUCOMA', 8),
+    ('OFTALMOLOGIA', 5, 'CATARATA', 4),
+    ('OFTALMOLOGIA', 6, 'DOENÇAS DA CONJUNTIVA', 7),
+    ('OFTALMOLOGIA', 7, 'DOENÇAS DA ESCLERA', 3),
+    ('OFTALMOLOGIA', 8, 'DOENÇAS DA ÓRBITA', 4),
+    ('OFTALMOLOGIA', 9, 'DOENÇAS DA CÓRNEA', 4),
+    ('OFTALMOLOGIA', 10, 'DOENÇAS DAS VIAS LACRIMAIS', 1),
+    ('OFTALMOLOGIA', 11, 'DOENÇAS DA PÁLPEBRA', 5),
+    ('OFTALMOLOGIA', 12, 'TRAUMA OCULAR', 2),
+    ('ONCOLOGIA', 1, 'BASES DA ONCOLOGIA', 11),
+    ('ONCOLOGIA', 2, 'PRINCÍPIOS DA RADIOTERAPIA', 6),
+    ('ONCOLOGIA', 3, 'CÂNCER DE COLO DO ÚTERO', 10),
+    ('ONCOLOGIA', 4, 'CÂNCER DE MAMA', 10),
+    ('ONCOLOGIA', 5, 'TUMORES DO TRATO GASTRINTESTINAL', 13),
+    ('ONCOLOGIA', 6, 'CÂNCER DE PULMÃO', 8),
+    ('ONCOLOGIA', 7, 'CÂNCER DE PRÓSTATA', 11),
+    ('ONCOLOGIA', 8, 'TUMORES CUTÂNEOS', 9),
+    ('ONCOLOGIA', 9, 'CÂNCER GENITURINÁRIO', 5),
+    ('ONCOLOGIA', 10, 'TUMORES DO SNC', 9),
+    ('ONCOLOGIA', 11, 'TUMORES DO SNC NA INFÂNCIA', 6),
+    ('ONCOLOGIA', 12, 'TUMOR DE WILMS', 5),
+    ('ONCOLOGIA', 13, 'NEUROBLASTOMA', 5),
+    ('ONCOLOGIA', 14, 'RETINOBLASTOMA', 4),
+    ('ONCOLOGIA', 15, 'OSTEOSSARCOMA', 7),
+    ('ORTOPEDIA', 1, 'TERMINOLOGIA EM ORTOPEDIA E TRAUMATOLOGIA', 8),
+    ('ORTOPEDIA', 2, 'PRINCÍPIOS RADIOGRÁFICOS EM ORTOPEDIA', 11),
+    ('ORTOPEDIA', 3, 'FRATURAS EM GERAL E BIOLOGIA DAS FRATURAS', 14),
+    ('ORTOPEDIA', 4, 'TRATAMENTO DAS FRATURAS', 7),
+    ('ORTOPEDIA', 5, 'COMPLICAÇÕES DAS FRATURAS', 7),
+    ('ORTOPEDIA', 6, 'FRATURAS EXPOSTAS', 5),
+    ('ORTOPEDIA', 7, 'SÍNDROME COMPARTIMENTAL', 3),
+    ('ORTOPEDIA', 8, 'ATENDIMENTO INICIAL AO POLITRAUMATIZADO', 5),
+    ('ORTOPEDIA', 9, 'TRM', 16),
+    ('ORTOPEDIA', 10, 'LOMBALGIA', 5),
+    ('ORTOPEDIA', 11, 'OSTEONECROSE DO QUADRIL', 7),
+    ('ORTOPEDIA', 12, 'BIOMECÂNICA DO JOELHO', 12),
+    ('ORTOPEDIA', 13, 'ENTORSE DE TORNOZELO', 4),
+    ('ORTOPEDIA', 14, 'FRATURAS DO ESQUELETO EM DESENVOLVIMENTO', 12),
+    ('ORTOPEDIA', 15, 'SÍNDROME DA CRIANÇA ESPANCADA', 4),
+    ('ORTOPEDIA', 16, 'DESENVOLVIMENTO DOS MMII', 5),
+    ('ORTOPEDIA', 17, 'DOENÇAS DO QUADRIL NA INFÂNCIA', 13),
+    ('ORTOPEDIA', 18, 'DEFORMIDADES DA COLUNA VERTEBRAL', 12),
+    ('ORTOPEDIA', 19, 'INFECÇÕES OSTEOARTICULARES', 6),
+    ('OTORRINOLARINGOLOGIA', 1, 'INTRODUÇÃO À ORL', 12),
+    ('OTORRINOLARINGOLOGIA', 2, 'LESÕES ORAIS', 9),
+    ('OTORRINOLARINGOLOGIA', 3, 'FARINGOTONSILITES', 9),
+    ('OTORRINOLARINGOLOGIA', 4, 'ANATOMIA, FISIOLOGIA E LESÕES DA LARINGE', 11),
+    ('OTORRINOLARINGOLOGIA', 5, 'ANATOMIA E FISIOLOGIA DA AUDIÇÃO', 17),
+    ('OTORRINOLARINGOLOGIA', 6, 'OTITES', 5),
+    ('OTORRINOLARINGOLOGIA', 7, 'ANATOMIA E FISIOLOGIA APLICADA DO NARIZ', 8),
+    ('OTORRINOLARINGOLOGIA', 8, 'RINITES E RINOSSINUSITES', 7),
+    ('PATOLOGIA', 1, 'INTRODUÇÃO À PATOLOGIA', 2),
+    ('PATOLOGIA', 2, 'LESÃO E MORTE CELULAR', 11),
+    ('PATOLOGIA', 3, 'INFLAMAÇÃO AGUDA', 8),
+    ('PATOLOGIA', 4, 'INFLAMAÇÃO CRÔNICA', 7),
+    ('PATOLOGIA', 5, 'REPARO CELULAR', 4),
+    ('PATOLOGIA', 6, 'DISTÚRBIOS HEMODINÂMICOS', 9),
+    ('PATOLOGIA', 7, 'DOENÇAS INFECCIOSAS', 11),
+    ('PATOLOGIA', 8, 'DEGENERAÇÕES CELULARES', 7),
+    ('PATOLOGIA', 9, 'PIGMENTAÇÕES PATOLÓGICAS', 6),
+    ('PATOLOGIA', 10, 'ATEROSCLEROSE', 7),
+    ('PATOLOGIA', 11, 'NEOPLASIAS', 14),
+    ('PEDIATRIA', 1, 'SEMIOLOGIA PEDIÁTRICA', 12),
+    ('PEDIATRIA', 2, 'ADOLESCÊNCIA', 7),
+    ('PEDIATRIA', 3, 'IVAS', 13),
+    ('PEDIATRIA', 4, 'IVAI', 7),
+    ('PEDIATRIA', 5, 'DIARREIA AGUDA', 9),
+    ('PEDIATRIA', 6, 'CHOQUE NA CRIANÇA', 10),
+    ('PEDIATRIA', 7, 'SEPSE', 5),
+    ('PEDIATRIA', 8, 'SUPORTE BÁSICO E AVANÇADO DE VIDA', 15),
+    ('PEDIATRIA', 9, 'CRISE CONVULSIVA FEBRIL', 4),
+    ('PEDIATRIA', 10, 'EPILEPSIA', 6),
+    ('PEDIATRIA', 11, 'DOENÇAS EXANTEMÁTICAS EM PEDIATRIA', 13),
+    ('PEDIATRIA', 12, 'ASMA EM PEDIATRIA', 9),
+    ('PNEUMOLOGIA', 1, 'INTRODUÇÃO', 11),
+    ('PNEUMOLOGIA', 2, 'SEMIOLOGIA RESPIRATÓRIA', 13),
+    ('PNEUMOLOGIA', 3, 'TESTES DE FUNÇÃO PULMONAR', 22),
+    ('PNEUMOLOGIA', 4, 'DIAGNÓSTICO POR IMAGEM', 14),
+    ('PNEUMOLOGIA', 5, 'PNEUMONIA COMUNITÁRIA', 13),
+    ('PNEUMOLOGIA', 6, 'PNEUMONIA NOSOCOMIAL', 6),
+    ('PNEUMOLOGIA', 7, 'PNEUMONIA NO IMUNOCOMPROMETIDO', 3),
+    ('PNEUMOLOGIA', 8, 'MICOSES PULMONARES', 6),
+    ('PNEUMOLOGIA', 9, 'TUBERCULOSE', 16),
+    ('PNEUMOLOGIA', 10, 'SUPURAÇÕES PULMONARES', 11),
+    ('PNEUMOLOGIA', 11, 'DERRAME PLEURAL', 5),
+    ('PNEUMOLOGIA', 12, 'PNEUMOTÓRAX', 2),
+    ('PNEUMOLOGIA', 13, 'ASMA', 10),
+    ('PNEUMOLOGIA', 14, 'DPOC', 18),
+    ('PNEUMOLOGIA', 15, 'CÂNCER DE PULMÃO', 8),
+    ('PNEUMOLOGIA', 16, 'NÓDULO PULMONAR', 5),
+    ('PNEUMOLOGIA', 17, 'TROMBOEMBOLISMO PULMONAR', 13),
+    ('PNEUMOLOGIA', 18, 'TOSSE', 5),
+    ('PNEUMOLOGIA', 19, 'SILICOSE', 4),
+    ('PNEUMOLOGIA', 20, 'CHURG-STRAUSS', 4),
+    ('PNEUMOLOGIA', 21, 'SARCOIDOSE', 6),
+    ('PNEUMOLOGIA', 22, 'SAHOS', 5),
+    ('PNEUMOLOGIA', 23, 'INSUFICIÊNCIA RESPIRATÓRIA AGUDA', 15),
+    ('PSIQUIATRIA', 1, 'ANAMNESE PSIQUIÁTRICA', 19),
+    ('PSIQUIATRIA', 2, 'PSICOFÁRMACOS', 17),
+    ('PSIQUIATRIA', 3, 'TRANSTORNOS ORGÂNICOS', 7),
+    ('PSIQUIATRIA', 4, 'TRANSTORNOS RELACIONADOS AO USO DE SUBSTÂNCIAS PSICOATIVAS', 6),
+    ('PSIQUIATRIA', 5, 'TRANSTORNOS DO HUMOR', 11),
+    ('PSIQUIATRIA', 6, 'TRANSTORNOS DA ANSIEDADE', 6),
+    ('PSIQUIATRIA', 7, 'ESQUIZOFRENIAS', 10),
+    ('PSIQUIATRIA', 8, 'TRANSTORNOS DISSOCIATIVOS, SOMATOFORMES, ALIMENTARES E DO SONO', 4),
+    ('PSIQUIATRIA', 9, 'TRANSTORNOS DA INFÂNCIA', 4),
+    ('PSIQUIATRIA', 10, 'TRANSTORNOS DE PERSONALIDADE', 4),
+    ('RADIOLOGIA', 1, 'INTRODUÇÃO À RADIOLOGIA', 16),
+    ('RADIOLOGIA', 2, 'ESTUDO RADIOLÓGICO DO TÓRAX', 23),
+    ('RADIOLOGIA', 3, 'ESTUDO RADIOLÓGICO DO ABDOME', 28),
+    ('RADIOLOGIA', 4, 'PROPEDÊUTICA POR IMAGEM EM OBSTETRÍCIA', 10),
+    ('RADIOLOGIA', 5, 'NEURORRADIOLOGIA', 16),
+    ('RADIOLOGIA', 6, 'SISTEMA ESQUELÉTICO', 17),
+    ('RADIOLOGIA', 7, 'ESTUDO RADIOLÓGICO DO APARELHO URINÁRIO', 9),
+    ('REUMATOLOGIA', 1, 'SEMIOLOGIA REUMATOLÓGICA', 17),
+    ('REUMATOLOGIA', 2, 'MÉTODOS COMPLEMENTARES', 5),
+    ('REUMATOLOGIA', 3, 'OSTEOARTRITE', 6),
+    ('REUMATOLOGIA', 4, 'GOTA', 4),
+    ('REUMATOLOGIA', 5, 'OSTEOPOROSE', 10),
+    ('REUMATOLOGIA', 6, 'ARTRITES NA INFÂNCIA', 10),
+    ('REUMATOLOGIA', 7, 'ARTRITE REUMATOIDE', 8),
+    ('REUMATOLOGIA', 8, 'ESPONDILOARTROPATIAS SORONEGATIVAS', 6),
+    ('REUMATOLOGIA', 9, 'ESCLEROSE SISTÊMICA PROGRESSIVA', 6),
+    ('REUMATOLOGIA', 10, 'MIOPATIAS INFLAMATÓRIAS IDIOPÁTICAS', 4),
+    ('REUMATOLOGIA', 11, 'LÚPUS ERITEMATOSO SISTÊMICO', 9),
+    ('UROLOGIA', 1, 'SEMIOLOGIA UROLÓGICA', 13),
+    ('UROLOGIA', 2, 'LITÍASE URINÁRIA', 14),
+    ('UROLOGIA', 3, 'INFECÇÃO URINÁRIA', 9),
+    ('UROLOGIA', 4, 'DOENÇAS SEXUALMENTE TRANSMISSÍVEIS', 13),
+    ('UROLOGIA', 5, 'HIPERPLASIA PROSTÁTICA BENIGNA', 14),
+    ('UROLOGIA', 6, 'AVALIAÇÃO URODINÂMICA', 7),
+    ('UROLOGIA', 7, 'CÂNCER DE PRÓSTATA', 16),
+    ('UROLOGIA', 8, 'CÂNCER DE BEXIGA URINÁRIA', 9),
+    ('UROLOGIA', 9, 'CÂNCER RENAL', 13),
+    ('UROLOGIA', 10, 'CÂNCER DE PÊNIS', 7),
+    ('UROLOGIA', 11, 'TUMORES DE TESTÍCULO', 11),
+    ('UROLOGIA', 12, 'PATOLOGIAS ESCROTAIS E PENIANAS', 10),
+    ('UROLOGIA', 13, 'BEXIGA NEUROGÊNICA', 10),
+    ('UROLOGIA', 14, 'INCONTINÊNCIA URINÁRIA EM MULHERES', 6),
+    ('UROLOGIA', 15, 'TRAUMA UROGENITAL', 12)
+)
+insert into public.temas (disciplina_id, ordem, tema_especifico, paginas)
+select d.id, s.ordem, s.tema_especifico, s.paginas
+from source_topics s
+join public.disciplinas d
+  on d.ciclo = 'clinico'
+ and lower(trim(d.nome)) = lower(trim(s.disciplina_nome))
+where not exists (
+  select 1
+  from public.temas t
+  where t.disciplina_id = d.id
+    and lower(trim(t.tema_especifico)) = lower(trim(s.tema_especifico))
+);
+
+do $$
+declare
+  v_disciplinas integer;
+  v_temas integer;
+  v_paginas integer;
+  v_basico_alterado integer;
+  v_tema_preexistente_alterado integer;
+begin
+  select count(*)::integer,
+         count(t.id)::integer,
+         coalesce(sum(t.paginas), 0)::integer
+  into v_disciplinas, v_temas, v_paginas
+  from public.disciplinas d
+  left join public.temas t on t.disciplina_id = d.id
+  where d.ciclo = 'clinico';
+
+  -- A contagem de disciplinas precisa ser feita sem a multiplicacao do join.
+  select count(*)::integer
+  into v_disciplinas
+  from public.disciplinas
+  where ciclo = 'clinico';
+
+  if v_disciplinas <> 29 or v_temas <> 410 or v_paginas <> 3859 then
+    raise exception
+      'Falha na reconciliacao do ciclo clinico: disciplinas=%, temas=%, paginas=%',
+      v_disciplinas, v_temas, v_paginas;
+  end if;
+
+  -- Protecao forte do Ciclo Basico: todos os registros anteriores sem ciclo
+  -- passam a basico, e nenhum outro campo pode mudar ou desaparecer.
+  select count(*)::integer
+  into v_basico_alterado
+  from _ciclo_clinico_baseline_disciplinas b
+  left join public.disciplinas d on d.id = b.id
+  where coalesce(b.ciclo_original, 'basico') = 'basico'
+    and (
+      d.id is null
+      or d.ciclo <> 'basico'
+      or (to_jsonb(d) - 'ciclo') is distinct from b.payload
+    );
+
+  if v_basico_alterado <> 0 then
+    raise exception
+      'Protecao do ciclo basico acionada: % disciplinas preexistentes foram alteradas ou removidas',
+      v_basico_alterado;
+  end if;
+
+  -- A carga clinica apenas insere temas novos; qualquer mudanca em um tema
+  -- que ja existia antes da transacao invalida toda a migracao.
+  select count(*)::integer
+  into v_tema_preexistente_alterado
+  from _ciclo_clinico_baseline_temas b
+  left join public.temas t on t.id = b.id
+  where t.id is null
+     or to_jsonb(t) is distinct from b.payload;
+
+  if v_tema_preexistente_alterado <> 0 then
+    raise exception
+      'Protecao dos temas preexistentes acionada: % temas foram alterados ou removidos',
+      v_tema_preexistente_alterado;
+  end if;
+end
+$$;
+
+commit;

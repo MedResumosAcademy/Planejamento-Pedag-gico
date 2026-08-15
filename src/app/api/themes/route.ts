@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getDisciplinas, getTemas, updateTema } from '@/lib/db'
+import { getTemas, updateTema } from '@/lib/db'
+import { parseCiclo } from '@/lib/cycles'
 
 const VALID_CAMPOS = new Set([
   'mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia',
@@ -15,7 +16,15 @@ const VALID_STATUS = new Set(['pendente','em_andamento','concluido'])
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const disciplina_id = searchParams.get('disciplina_id')
-  const temas = await getTemas(disciplina_id ? { disciplina_id: Number(disciplina_id) } : undefined)
+  const rawCiclo = searchParams.get('ciclo')
+  const ciclo = parseCiclo(rawCiclo)
+  if (rawCiclo && !ciclo) {
+    return NextResponse.json({ error: 'ciclo deve ser "basico" ou "clinico"' }, { status: 400 })
+  }
+  const temas = await getTemas({
+    disciplina_id: disciplina_id ? Number(disciplina_id) : undefined,
+    ciclo,
+  })
   return NextResponse.json(temas)
 }
 

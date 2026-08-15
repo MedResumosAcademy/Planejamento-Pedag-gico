@@ -34,7 +34,7 @@ export default function Sidebar({ session }: { session: UserSession | null }) {
               <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: 'white', flexShrink: 0 }}>M</div>
               <div>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1e293b', whiteSpace: 'nowrap' }}>Med2026</div>
-                <div style={{ fontSize: 10, color: '#64748b', whiteSpace: 'nowrap' }}>Ciclo Básico</div>
+                <div style={{ fontSize: 10, color: '#64748b', whiteSpace: 'nowrap' }}>Gestão 2026</div>
               </div>
             </div>
             <button onClick={() => setOpen(false)} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 6, padding: '4px 8px', color: '#64748b', cursor: 'pointer', fontSize: 14 }}>←</button>
@@ -67,7 +67,7 @@ export default function Sidebar({ session }: { session: UserSession | null }) {
       {open && session?.nome && (
         <div style={{ padding: '0 20px 16px', fontSize: 11, color: '#94a3b8' }}>
           <div style={{ marginBottom: 4, color: '#64748b', fontWeight: 500, fontSize: 12 }}>{session.nome}</div>
-          258 temas · 18 disciplinas · ~2.136 páginas
+          Ciclos Básico e Clínico
         </div>
       )}
     </div>
