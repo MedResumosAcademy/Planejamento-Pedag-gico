@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function LoginPage() {
@@ -27,7 +28,7 @@ export default function LoginPage() {
     }
   }
 
-  const inp = { width: '100%', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '10px 14px', color: '#1e293b', fontSize: 14, outline: 'none', boxSizing: 'border-box' as const }
+  const inp = { width: '100%', background: 'rgba(0,0,0,0.05)', border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '10px 14px', color: '#1e293b', fontSize: 14, boxSizing: 'border-box' as const }
 
   return (
     <div style={{ minHeight: '100vh', background: '#f4f6fb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -39,20 +40,25 @@ export default function LoginPage() {
         </div>
         <form onSubmit={handleLogin}>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#475569', fontWeight: 500, display: 'block', marginBottom: 6 }}>E-MAIL</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="your@email.com" style={inp} />
+            <label htmlFor="login-email" style={{ fontSize: 12, color: '#475569', fontWeight: 500, display: 'block', marginBottom: 6 }}>E-MAIL</label>
+            <input id="login-email" name="email" type="email" autoComplete="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" style={inp} />
           </div>
           <div style={{ marginBottom: 16 }}>
-            <label style={{ fontSize: 12, color: '#475569', fontWeight: 500, display: 'block', marginBottom: 6 }}>PASSWORD</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" style={inp} />
+            <label htmlFor="login-password" style={{ fontSize: 12, color: '#475569', fontWeight: 500, display: 'block', marginBottom: 6 }}>SENHA</label>
+            <input id="login-password" name="password" type="password" autoComplete="current-password" value={password} onChange={e => setPassword(e.target.value)} required placeholder="••••••••" style={inp} />
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', marginBottom: 24 }}>
             <input type="checkbox" checked={keepLoggedIn} onChange={e => setKeepLoggedIn(e.target.checked)} style={{ accentColor: '#6366f1', width: 16, height: 16 }} />
             <span style={{ fontSize: 13, color: '#64748b' }}>Keep me logged in</span>
           </label>
+          <div style={{ textAlign: 'right', marginTop: -12, marginBottom: 20 }}>
+            <Link href="/recuperar-senha" style={{ color: '#4f46e5', fontSize: 13, fontWeight: 600, textDecoration: 'none' }}>
+              Esqueci minha senha
+            </Link>
+          </div>
           {error && <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#dc2626', marginBottom: 16 }}>{error}</div>}
           <button type="submit" disabled={loading} style={{ width: '100%', background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', borderRadius: 10, padding: '12px', color: 'white', fontSize: 14, fontWeight: 600, cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1 }}>
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? 'Entrando…' : 'Entrar'}
           </button>
         </form>
       </div>
