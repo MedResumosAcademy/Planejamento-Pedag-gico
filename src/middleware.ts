@@ -25,7 +25,13 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Public routes — no auth required
-  if (pathname.startsWith('/login') || pathname.startsWith('/cadastro')) {
+  if (
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/cadastro') ||
+    pathname.startsWith('/auth/confirm') ||
+    pathname.startsWith('/recuperar-senha') ||
+    pathname.startsWith('/redefinir-senha')
+  ) {
     if (user && pathname.startsWith('/login')) {
       return NextResponse.redirect(new URL('/', request.url))
     }
