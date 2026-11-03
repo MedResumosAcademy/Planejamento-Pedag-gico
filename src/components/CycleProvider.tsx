@@ -42,6 +42,7 @@ export function CycleSwitcher({ compact = false }: { compact?: boolean }) {
 
   return (
     <div
+      role="group"
       aria-label="Selecionar ciclo"
       style={{
         display: 'inline-flex', gap: 3, padding: 3, borderRadius: 10,
@@ -62,7 +63,7 @@ export function CycleSwitcher({ compact = false }: { compact?: boolean }) {
               padding: compact ? '6px 9px' : '7px 14px', fontSize: compact ? 11 : 12.5,
               fontWeight: 700, transition: 'all .15s',
               background: active ? '#fff' : 'transparent',
-              color: active ? '#7c3aed' : '#64748b',
+              color: active ? '#7c3aed' : '#475569',
               boxShadow: active ? '0 1px 3px rgba(15,23,42,.12)' : 'none',
             }}
           >

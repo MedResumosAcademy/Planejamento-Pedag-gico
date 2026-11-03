@@ -7,6 +7,8 @@ import { getRevisoesByTema, addRevisao, deleteRevisao } from '@/lib/repositories
 import { getProfessores, type ProfessorOption } from '@/lib/repositories/colaboradores'
 import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
 import { CICLOS } from '@/lib/cycles'
+import CategorySwitcher, { useContentCategory } from '@/components/CategorySwitcher'
+import { CONTENT_CATEGORIES, categoryStatus, categorySummary, type ContentCategory, type CategorySummary } from '@/lib/content-categories'
 import type { Revisao } from '@/types'
 
 const todayISO = () => new Date().toISOString().slice(0, 10)
@@ -27,11 +29,11 @@ interface Tema {
   vid_agendamento:Status; vid_gravacao_feita:Status; vid_aprovacao_aula:Status; vid_publicada:Status
   comp_simulado:Status; comp_questoes:Status; comp_flashcards:Status
 }
-interface Disc { id:number; nome:string; cor:string; ciclo:'basico'|'clinico'; microassunto:string|null; total_temas:number; concluidos:number; em_andamento:number; pendentes:number; paginas_totais:number; progresso_geral:number }
+interface Disc { id:number; nome:string; cor:string; ciclo:'basico'|'clinico'; microassunto:string|null; total_temas:number; concluidos:number; em_andamento:number; pendentes:number; progresso_geral:number; categorias:Record<ContentCategory, CategorySummary> }
 
 const GRUPOS = [
   {
-    key:'mat', label:'Materiais', color:'#16a34a',
+    key:'resumos', label:'Resumos', color:'#16a34a',
     campos:[
       {k:'mat_atualizado',l:'Atualizado'},
       {k:'mat_revisado',l:'Revisado'},
@@ -40,7 +42,7 @@ const GRUPOS = [
     ]
   },
   {
-    key:'vid', label:'Vídeo', color:'#2563eb',
+    key:'videoaulas', label:'Videoaulas', color:'#2563eb',
     campos:[
       {k:'vid_envio_tema',l:'Envio do Tema'},
       {k:'vid_slide_pronto',l:'Slide Pronto'},
@@ -53,12 +55,12 @@ const GRUPOS = [
     ]
   },
   {
-    key:'comp', label:'Complementos', color:'#d97706',
+    key:'questoes', label:'Questões', color:'#d97706',
     campos:[
       {k:'comp_questoes',l:'Questões'},
-      {k:'comp_flashcards',l:'Flashcards'},
     ]
   },
+  { key:'flashcards', label:'Flashcards', color:'#7c3aed', campos:[{k:'comp_flashcards',l:'Flashcards'}] },
 ]
 
 // Step indicators for video workflow
@@ -77,6 +79,8 @@ function Inner() {
   const sp = useSearchParams()
   const router = useRouter()
   const { ciclo } = useCycle()
+  const { category, setCategory } = useContentCategory()
+  const categoryConfig = CONTENT_CATEGORIES[category]
   const cycleConfig = CICLOS[ciclo]
   const selectedId = sp.get('id') ? Number(sp.get('id')) : null
   const [disciplinas, setDisciplinas] = useState<Disc[]>([])
@@ -123,10 +127,10 @@ function Inner() {
   useEffect(() => { loadTemas(selectedId ?? undefined) }, [selectedId, loadTemas])
   useEffect(() => {
     if (isCoordinator && disciplinasLoaded && selectedId && !disciplinas.some(d => d.id === selectedId)) {
-      router.replace('/disciplinas')
+      router.replace(`/disciplinas?categoria=${category}`)
     }
-  }, [disciplinas, disciplinasLoaded, isCoordinator, router, selectedId])
-  useEffect(() => { setExpandido(null) }, [ciclo])
+  }, [disciplinas, disciplinasLoaded, isCoordinator, router, selectedId, category])
+  useEffect(() => { setExpandido(null) }, [ciclo, category])
   useEffect(() => { getProfessores().then(setProfessores).catch(e => console.error('Falha ao carregar professores:', e)) }, [])
 
   const toggle = async (t: Tema, campo: string) => {
@@ -174,10 +178,11 @@ function Inner() {
     try { await deleteRevisao(id); await loadRevisoes(t.id) } catch (e) { console.error(e) }
   }
 
-  const selectedDisc = disciplinas.find(d => d.id === selectedId)
+  const selectedBase = disciplinas.find(d => d.id === selectedId)
+  const selectedDisc = selectedBase ? { ...selectedBase, ...categorySummary(temas.filter(t => t.disciplina_id === selectedId), category) } : undefined
   const filtered = temas.filter(t =>
     t.tema_especifico.toLowerCase().includes(busca.toLowerCase()) &&
-    (!filtroStatus || t.status_geral===filtroStatus)
+    (!filtroStatus || categoryStatus(t, category)===filtroStatus)
   )
 
   return (
@@ -190,15 +195,15 @@ function Inner() {
           {isCoordinator && <div style={{ marginTop:12 }}><CycleSwitcher compact /></div>}
         </div>
         <div style={{ padding:'8px', flex:1 }}>
-          <Link href="/disciplinas" style={{ textDecoration:'none' }}>
+          <Link href={`/disciplinas?categoria=${category}`} style={{ textDecoration:'none' }}>
             <div style={{ padding:'8px 12px', borderRadius:8, fontSize:13, color:!selectedId?'#7c3aed':'#64748b', background:!selectedId?'rgba(167,139,250,0.1)':'transparent', marginBottom:4, cursor:'pointer', fontWeight:500 }}>Todas</div>
           </Link>
           {disciplinas.map(d => (
-            <Link key={d.id} href={`/disciplinas?id=${d.id}`} style={{ textDecoration:'none' }}>
+            <Link key={d.id} href={`/disciplinas?id=${d.id}&categoria=${category}`} style={{ textDecoration:'none' }}>
               <div style={{ padding:'7px 12px', borderRadius:8, fontSize:12, color:selectedId===d.id?'#1e293b':'#64748b', background:selectedId===d.id?`${d.cor}20`:'transparent', marginBottom:2, cursor:'pointer', display:'flex', alignItems:'center', gap:8 }}>
                 <span style={{ width:7, height:7, borderRadius:'50%', background:d.cor, flexShrink:0 }} />
                 <span style={{ flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{d.nome}</span>
-                <span style={{ fontSize:10, color:'#94a3b8' }}>{d.concluidos}/{d.total_temas}</span>
+                <span style={{ fontSize:10, color:'#94a3b8' }}>{(selectedId === d.id ? selectedDisc?.concluidos : d.categorias?.[category].concluidos) ?? 0}/{d.total_temas}</span>
               </div>
             </Link>
           ))}
@@ -216,12 +221,13 @@ function Inner() {
               </div>
               <div style={{ marginLeft:'auto', textAlign:'right' }}>
                 <div style={{ fontSize:28, fontWeight:700, color:selectedDisc.cor }}>{selectedDisc.progresso_geral || 0}%</div>
-                <div style={{ fontSize:12, color:'#94a3b8' }}>{selectedDisc.concluidos}/{selectedDisc.total_temas} temas</div>
+                <div style={{ fontSize:12, color:'#94a3b8' }}>{selectedDisc.concluidos}/{selectedDisc.total_temas} · {categoryConfig.label}</div>
               </div>
             </div>
           ) : <h1 style={{ fontSize:22, fontWeight:700, color:'#0f172a' }}>Todos os Temas · {isCoordinator ? cycleConfig.label : 'Minhas disciplinas'}</h1>}
         </div>
 
+        <div style={{ marginBottom:16 }}><CategorySwitcher category={category} onChange={setCategory} /></div>
         {/* Filtros */}
         <div style={{ display:'flex', gap:8, marginBottom:20, flexWrap:'wrap' }}>
           <input value={busca} onChange={e=>setBusca(e.target.value)} placeholder="🔍 Buscar tema..." style={{ background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:10, padding:'8px 14px', color:'#1e293b', fontSize:13, outline:'none', flex:1, minWidth:200 }} />
@@ -238,20 +244,19 @@ function Inner() {
             {filtered.map(t => {
               const isOpen = expandido===t.id
               return (
-                <div key={t.id} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:12, overflow:'hidden', borderLeft:`3px solid ${SCOLOR[t.status_geral]}` }}>
-                  <div onClick={()=>openTema(t)} style={{ display:'flex', alignItems:'center', gap:12, padding:'14px 18px', cursor:'pointer' }}>
+                <div key={t.id} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:12, overflow:'hidden', borderLeft:`3px solid ${SCOLOR[categoryStatus(t, category)]}` }}>
+                  <div role="button" tabIndex={0} aria-expanded={isOpen} onClick={()=>openTema(t)} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openTema(t) } }} style={{ display:'flex', flexWrap:'wrap', alignItems:'center', gap:12, padding:'14px 18px', cursor:'pointer' }}>
                     <span style={{ fontSize:13, color:'#94a3b8', width:24, flexShrink:0 }}>{t.ordem}</span>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:14, fontWeight:500, color:'#1e293b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{t.tema_especifico}</div>
                       {!selectedId && <div style={{ fontSize:11, color:'#94a3b8', marginTop:2 }}>{t.disciplina_nome}</div>}
                     </div>
                     <div style={{ display:'flex', gap:4 }}>
-                      {GRUPOS.map(g => {
+                      {GRUPOS.filter(g => g.key === category).map(g => {
                         const done = g.campos.filter(c => (t as any)[c.k]==='concluido').length
-                        return <div key={g.key} style={{ fontSize:11, padding:'2px 8px', borderRadius:20, background:`${g.color}15`, color:g.color, border:`1px solid ${g.color}30`, fontWeight:600 }}>{done}/{g.campos.length}</div>
+                        return <div key={g.key} style={{ fontSize:11, padding:'2px 8px', borderRadius:20, background:`${g.color}15`, color:g.color, border:`1px solid ${g.color}30`, fontWeight:600 }}>{g.label} · {SLABEL[categoryStatus(t, category)]} · {done}/{g.campos.length}</div>
                       })}
                     </div>
-                    {t.paginas && <span style={{ fontSize:12, color:'#2563eb', flexShrink:0 }}>{t.paginas}p</span>}
                     <span style={{ color:'#94a3b8', fontSize:11, transform:isOpen?'rotate(180deg)':'none', display:'inline-block', transition:'transform 0.2s' }}>▼</span>
                   </div>
 
@@ -259,9 +264,9 @@ function Inner() {
                     <div style={{ padding:'0 18px 18px', borderTop:'1px solid rgba(0,0,0,0.05)' }}>
                       <div style={{ paddingTop:16, display:'flex', flexDirection:'column', gap:20 }}>
 
-                        {/* Materiais */}
-                        <div>
-                          <div style={{ fontSize:11, fontWeight:700, color:'#16a34a', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Materiais</div>
+                        {/* Resumos */}
+                        {category === 'resumos' && <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'#16a34a', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Resumos</div>
                           <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
                             {GRUPOS[0].campos.map(c => {
                               const s = (t as any)[c.k] as Status
@@ -275,11 +280,11 @@ function Inner() {
                               )
                             })}
                           </div>
-                        </div>
+                        </div>}
 
                         {/* Vídeo — workflow sequencial */}
-                        <div>
-                          <div style={{ fontSize:11, fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>Vídeo</div>
+                        {category === 'videoaulas' && <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:'#2563eb', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:12 }}>Videoaulas</div>
                           <div style={{ display:'flex', alignItems:'flex-start', gap:0, overflowX:'auto', paddingBottom:8 }}>
                             {VID_STEPS.map((step, idx) => {
                               const s = (t as any)[step.k] as Status
@@ -308,13 +313,12 @@ function Inner() {
                               )
                             })}
                           </div>
-                        </div>
+                        </div>}
 
-                        {/* Complementos */}
-                        <div>
-                          <div style={{ fontSize:11, fontWeight:700, color:'#d97706', textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>Complementos</div>
+                        {(category === 'questoes' || category === 'flashcards') && <div>
+                          <div style={{ fontSize:11, fontWeight:700, color:categoryConfig.color, textTransform:'uppercase', letterSpacing:'0.8px', marginBottom:10 }}>{categoryConfig.label}</div>
                           <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-                            {GRUPOS[2].campos.map(c => {
+                            {GRUPOS.find(g => g.key === category)!.campos.map(c => {
                               const s = (t as any)[c.k] as Status
                               return (
                                 <div key={c.k} style={{ display:'flex', flexDirection:'column', gap:4, alignItems:'center' }}>
@@ -326,13 +330,13 @@ function Inner() {
                               )
                             })}
                           </div>
-                        </div>
+                        </div>}
 
                         {/* Info */}
                         <div style={{ display:'flex', gap:16, paddingTop:8, borderTop:'1px solid rgba(0,0,0,0.05)', flexWrap:'wrap' }}>
-                          {t.paginas && <span style={{ fontSize:12, color:'#64748b' }}>📄 {t.paginas} páginas</span>}
-                          {t.questoes_previstas && <span style={{ fontSize:12, color:'#64748b' }}>❓ {t.questoes_previstas} questões</span>}
+                          {category === 'questoes' && t.questoes_previstas != null && <span style={{ fontSize:12, color:'#64748b' }}>❓ {t.questoes_previstas} questões previstas</span>}
                           {t.responsavel && <span style={{ fontSize:12, color:'#64748b' }}>👤 {t.responsavel}</span>}
+                          {t.observacoes && <span style={{ fontSize:12, color:'#64748b' }}>{t.observacoes}</span>}
                         </div>
 
                         {/* Controle de versões */}
@@ -371,7 +375,7 @@ function Inner() {
                             {t.responsavel && <button onClick={()=>setResponsavel(t,'')} style={{ background:'none', border:'none', color:'#64748b', fontSize:11, cursor:'pointer' }}>limpar</button>}
                           </div>
 
-                          <div style={{ fontSize:12, color:'#475569', marginBottom:8 }}>📝 Revisões do material</div>
+                          <div style={{ fontSize:12, color:'#475569', marginBottom:8 }}>📝 Revisões do tema (histórico compartilhado)</div>
                           <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:10 }}>
                             {revLoading[t.id] && <div style={{ fontSize:12, color:'#94a3b8' }}>Carregando...</div>}
                             {!revLoading[t.id] && (revisoes[t.id]?.length ?? 0) === 0 && <div style={{ fontSize:12, color:'#94a3b8' }}>Nenhuma revisão registrada ainda.</div>}
