@@ -1,21 +1,30 @@
 import type { Ciclo } from '@/lib/cycles'
-import { RESUMOS_PLANILHA, resumoPlanilha, resumoPlanilhaColeta, resumoPlanilhaPct } from '@/lib/resumos-planilha'
+import { resumoPlanilhaColeta, resumoPlanilhaPct, type ResumoPlanilhaResponse } from '@/lib/resumos-planilha'
 
-export default function ResumoPlanilhaPanel({ ciclo }: { ciclo: Ciclo }) {
-  const data = resumoPlanilha(ciclo)
-  const pct = resumoPlanilhaPct(ciclo)
+export default function ResumoPlanilhaPanel({ ciclo, payload, onRefresh, refreshState }: {
+  ciclo: Ciclo; payload: ResumoPlanilhaResponse; onRefresh: () => void; refreshState: 'idle' | 'loading' | 'ready' | 'error'
+}) {
+  const data = payload.data
+  const pct = resumoPlanilhaPct(data)
+  const online = payload.source_state === 'online'
+  const fetchedAt = payload.fetched_at ? new Date(payload.fetched_at).toLocaleString('pt-BR', { timeZone:'America/Fortaleza', dateStyle:'short', timeStyle:'short' }) : null
   return (
-    <section aria-label="Inventário de resumos da planilha" style={{ background:'#ecfdf5', border:'1px solid #86efac', borderRadius:16, padding:'20px 24px', margin:'0 0 24px' }}>
+    <section aria-label="Inventário de resumos da planilha" style={{ background:online ? '#ecfdf5' : '#fffbeb', border:`1px solid ${online ? '#86efac' : '#fcd34d'}`, borderRadius:16, padding:'20px 24px', margin:'0 0 24px' }}>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', gap:16, flexWrap:'wrap' }}>
         <div>
-          <h2 style={{ fontSize:16, fontWeight:700, color:'#14532d', margin:'0 0 6px' }}>Resumos · inventário da planilha</h2>
-          <p style={{ fontSize:12, color:'#166534', margin:0 }}>Retrato da planilha: PDFs considerados prontos; Drive lido em {resumoPlanilhaColeta(ciclo)}. Atualização manual, não sincronizada em tempo real.</p>
+          <h2 style={{ fontSize:16, fontWeight:700, color:'#14532d', margin:'0 0 6px' }}>Resumos · Ciclo {ciclo === 'basico' ? 'Básico' : 'Clínico'}</h2>
+          <p style={{ fontSize:12, color:'#166534', margin:0 }}>{online ? `Última consulta online em ${fetchedAt} (Fortaleza). ` : 'Retrato datado; não é leitura online. '}Drive lido em {resumoPlanilhaColeta(payload.source_read_at)} (horário da planilha).</p>
         </div>
-        <a href={RESUMOS_PLANILHA.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:'#166534', textDecoration:'underline' }}>Abrir planilha de origem</a>
+        <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+          <button type="button" onClick={onRefresh} disabled={refreshState === 'loading'} style={{ fontSize:12, color:'#166534', background:'#fff', border:'1px solid #86efac', borderRadius:8, padding:'6px 10px', cursor:refreshState === 'loading' ? 'wait' : 'pointer' }}>{refreshState === 'loading' ? 'Atualizando…' : 'Atualizar leitura'}</button>
+          <a href={payload.source_url} target="_blank" rel="noopener noreferrer" style={{ fontSize:12, color:'#166534', textDecoration:'underline' }}>Abrir planilha de origem</a>
+        </div>
       </div>
+      {payload.warning && <p role="status" style={{ margin:'12px 0 0', fontSize:12, fontWeight:600, color:'#92400e' }}>{payload.warning}</p>}
+      {refreshState === 'error' && <p role="alert" style={{ margin:'12px 0 0', fontSize:12, fontWeight:600, color:'#92400e' }}>A atualização falhou; os números acima são da última leitura identificada, não uma nova consulta.</p>}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(135px,1fr))', gap:12, marginTop:18 }}>
         {([
-          ['Temas na planilha', data.temas], ['PDFs prontos', data.prontos], ['Faltando', data.faltando], ['Concluído', `${pct}%`],
+          ['Temas na planilha', data.temas], ['Temas com PDF pronto', data.prontos], ['Faltando', data.faltando], ['% com PDF pronto', `${pct}%`],
         ] as const).map(([label, value]) => (
           <div key={label} style={{ background:'#fff', border:'1px solid #bbf7d0', borderRadius:10, padding:'12px 14px' }}>
             <div style={{ fontSize:11, color:'#166534' }}>{label}</div>

@@ -9,7 +9,7 @@ import { CICLOS } from '@/lib/cycles'
 import Link from 'next/link'
 import { useContentCategory } from '@/components/CategorySwitcher'
 import { CONTENT_CATEGORIES, CONTENT_CATEGORY_KEYS, categoryStages, categorySummary } from '@/lib/content-categories'
-import { resumoPlanilha, resumoPlanilhaPct } from '@/lib/resumos-planilha'
+import { resumoPlanilhaPct, useResumoPlanilha } from '@/lib/resumos-planilha'
 import ResumoPlanilhaPanel from '@/components/ResumoPlanilhaPanel'
 import type { Ciclo, Disciplina, Tema, Gravacao, Colaborador } from '@/types'
 
@@ -32,13 +32,16 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
   const [colaboradores, setColaboradores] = useState<Colaborador[]>([])
   const [loading, setLoading] = useState(true)
+  const [dataCycle, setDataCycle] = useState<Ciclo | undefined>()
   const [discId, setDiscId] = useState<number | null>(null)
   const [profId, setProfId] = useState<string | null>(null)
   const [drill, setDrill] = useState<{ type: string; id?: any; title: string } | null>(null)
   const today = useMemo(() => new Date(), [])
   const target = useMemo(() => new Date(cycleConfig.target + 'T00:00:00'), [cycleConfig.target])
+  const resumoSource = useResumoPlanilha(ciclo, !!ciclo)
 
   useEffect(() => {
+    let active = true;
     (async () => {
       setLoading(true)
       try {
@@ -47,10 +50,16 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
         const [d, t, c, g] = await Promise.all([
           getAllDisciplinas(ciclo), getAllTemas(ciclo), getAllColaboradores(), getGravacoesRange(start, end, ciclo),
         ])
-        setDisciplinas(d); setTemas(t); setColaboradores(c); setGravacoes(g)
-      } catch (e) { console.error('Falha ao carregar o painel:', e) }
-      setLoading(false)
+        if (active) { setDisciplinas(d); setTemas(t); setColaboradores(c); setGravacoes(g) }
+      } catch (e) {
+        if (active) {
+          console.error('Falha ao carregar o painel:', e)
+          setDisciplinas([]); setTemas([]); setColaboradores([]); setGravacoes([])
+        }
+      }
+      if (active) { setDataCycle(ciclo); setLoading(false) }
     })()
+    return () => { active = false }
   }, [today, ciclo])
 
   useEffect(() => {
@@ -170,21 +179,24 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
         </div>
       </div>
 
-      {loading ? <div className="loading">Carregando…</div> : <>
+      {loading || dataCycle !== ciclo ? <div className="loading">Carregando…</div> : <>
       <p style={{ fontSize:12, color:'#64748b', margin:0 }}>{ciclo ? 'Resumos: inventário da planilha para o ciclo inteiro, sem aplicar os filtros. Demais categorias: planejamento editorial por tema.' : 'Nesta visão, as categorias mostram o planejamento editorial por tema; não representam PDFs disponíveis.'}</p>
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:10 }}>
         {CONTENT_CATEGORY_KEYS.map(key => {
           const config = CONTENT_CATEGORIES[key]
           const summary = categorySummary(tF, key)
-          const source = key === 'resumos' && ciclo ? resumoPlanilha(ciclo) : null
+          const isSource = key === 'resumos' && !!ciclo
+          const source = isSource ? resumoSource.payload?.data : null
           return <button type="button" key={key} aria-pressed={category === key} onClick={() => setCategory(key)} className="kpi clickable" style={{ textAlign:'left', fontFamily:'inherit', borderColor:category === key ? config.color : undefined }}>
-            <div className="l">{config.label}</div><div className="v" style={{ color:config.color }}>{source ? resumoPlanilhaPct(ciclo!) : summary.progresso_geral}%</div>
-            <div className="s">{source ? `${source.prontos}/${source.temas} PDFs prontos · ${source.faltando} faltando` : `${summary.concluidos}/${summary.total_temas} com etapas concluídas`}</div>
-            <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{source ? 'Fonte: planilha · ciclo inteiro' : config.unit}</div>
+            <div className="l">{config.label}</div><div className="v" style={{ color:config.color }}>{isSource ? (source ? `${resumoPlanilhaPct(source)}%` : '—') : `${summary.progresso_geral}%`}</div>
+            <div className="s">{isSource ? (source ? `${source.prontos} de ${source.temas} temas com PDF pronto · ${source.faltando} faltando` : resumoSource.status === 'loading' ? 'Carregando planilha…' : 'Fonte indisponível; sem contagem') : `${summary.concluidos}/${summary.total_temas} com etapas concluídas`}</div>
+            <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{isSource ? `Fonte: planilha · ${resumoSource.payload?.source_state === 'online' ? 'online' : resumoSource.payload ? 'retrato datado' : 'aguardando fonte'} · ciclo inteiro` : config.unit}</div>
           </button>
         })}
       </div>
-      {category === 'resumos' && ciclo && <ResumoPlanilhaPanel ciclo={ciclo} />}
+      {category === 'resumos' && ciclo && (resumoSource.payload
+        ? <ResumoPlanilhaPanel ciclo={ciclo} payload={resumoSource.payload} onRefresh={resumoSource.refresh} refreshState={resumoSource.status} />
+        : <p role="status" style={{ color:'#92400e', fontSize:13 }}>{resumoSource.status === 'loading' ? 'Carregando inventário da planilha…' : 'Inventário de resumos indisponível; nenhum total foi estimado.'}</p>)}
       <div className="kpis">
         {kpis.map(kp => (
           <div className="kpi clickable" key={kp.l} onClick={() => setDrill({ type: kp.type, title: kp.l })}>

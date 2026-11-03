@@ -1,6 +1,6 @@
 'use client'
 export const dynamic = 'force-dynamic'
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, useRef, Suspense } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -10,7 +10,7 @@ import { CICLOS } from '@/lib/cycles'
 import CategorySwitcher, { useContentCategory } from '@/components/CategorySwitcher'
 import ResumoPlanilhaPanel from '@/components/ResumoPlanilhaPanel'
 import { CONTENT_CATEGORIES, CONTENT_CATEGORY_KEYS, type ContentCategory, type CategorySummary } from '@/lib/content-categories'
-import { resumoPlanilha, resumoPlanilhaPct } from '@/lib/resumos-planilha'
+import { resumoPlanilhaPct, useResumoPlanilha } from '@/lib/resumos-planilha'
 import type { Ciclo } from '@/types'
 
 interface DiscStats {
@@ -64,6 +64,8 @@ function DashboardInner() {
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
   const [gravacoes, setGravacoes] = useState<Gravacao[]>([])
   const [loading, setLoading] = useState(true)
+  const [dataCycle, setDataCycle] = useState<Ciclo | undefined>()
+  const requestId = useRef(0)
   const [busca, setBusca] = useState('')
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -71,42 +73,51 @@ function DashboardInner() {
   const weekDates = getWeekDates()
 
   const load = useCallback(async () => {
+    const currentRequest = ++requestId.current
+    const active = () => currentRequest === requestId.current
     setLoading(true)
-    const supabase = createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-    let isCoordinatorUser = false
-    if (user) {
-      const { data: colab } = await supabase.from('colaboradores').select('nivel, nome').eq('id', user.id).single()
-      if (colab) {
-        isCoordinatorUser = colab.nivel === 'coordenador'
-        setUserInfo({ id: user.id, nivel: colab.nivel, nome: colab.nome })
-        if (colab.nivel === 'professor') {
-          const { data: pd } = await supabase.from('professor_disciplinas').select('disciplina_id').eq('professor_id', user.id)
-          setProfessorDisciplinas(pd?.map(d => d.disciplina_id) || [])
-        } else {
-          setProfessorDisciplinas([])
+    try {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      let isCoordinatorUser = false
+      if (user) {
+        const { data: colab } = await supabase.from('colaboradores').select('nivel, nome').eq('id', user.id).single()
+        if (colab) {
+          isCoordinatorUser = colab.nivel === 'coordenador'
+          if (active()) setUserInfo({ id: user.id, nivel: colab.nivel, nome: colab.nome })
+          if (colab.nivel === 'professor') {
+            const { data: pd } = await supabase.from('professor_disciplinas').select('disciplina_id').eq('professor_id', user.id)
+            if (active()) setProfessorDisciplinas(pd?.map(d => d.disciplina_id) || [])
+          } else if (active()) {
+            setProfessorDisciplinas([])
+          }
         }
-      }
 
-      // Load this week's recordings
-      const currentWeek = getWeekDates()
-      const startDate = currentWeek[0].toISOString().split('T')[0]
-      const endDate = currentWeek[6].toISOString().split('T')[0]
-      let q = supabase.from('gravacoes')
-        .select('*, colaboradores(nome), disciplinas!inner(nome, cor, ciclo), temas(tema_especifico)')
-        .gte('data_hora', startDate)
-        .lte('data_hora', endDate + 'T23:59:59')
-        .order('data_hora')
-      if (isCoordinatorUser) q = q.eq('disciplinas.ciclo', ciclo)
-      const { data: gravs } = await q
-      setGravacoes(gravs || [])
+        // Load this week's recordings.
+        const currentWeek = getWeekDates()
+        const startDate = currentWeek[0].toISOString().split('T')[0]
+        const endDate = currentWeek[6].toISOString().split('T')[0]
+        let q = supabase.from('gravacoes')
+          .select('*, colaboradores(nome), disciplinas!inner(nome, cor, ciclo), temas(tema_especifico)')
+          .gte('data_hora', startDate)
+          .lte('data_hora', endDate + 'T23:59:59')
+          .order('data_hora')
+        if (isCoordinatorUser) q = q.eq('disciplinas.ciclo', ciclo)
+        const { data: gravs } = await q
+        if (active()) setGravacoes(gravs || [])
+      }
+      const r = await fetch(`/api/disciplines${isCoordinatorUser ? `?ciclo=${ciclo}` : ''}`)
+      if (!r.ok) throw new Error('disciplinas indisponíveis')
+      const nextDisciplinas = await r.json()
+      if (active()) setDisciplinas(nextDisciplinas)
+    } catch {
+      if (active()) { setDisciplinas([]); setGravacoes([]) }
+    } finally {
+      if (active()) { setDataCycle(ciclo); setLoading(false) }
     }
-    const r = await fetch(`/api/disciplines${isCoordinatorUser ? `?ciclo=${ciclo}` : ''}`)
-    setDisciplinas(await r.json())
-    setLoading(false)
   }, [ciclo])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(); return () => { requestId.current++ } }, [load])
 
   async function handleLogout() {
     const supabase = createClient()
@@ -122,6 +133,7 @@ function DashboardInner() {
 
   const isProfessor = userInfo?.nivel === 'professor'
   const isCoordinator = userInfo?.nivel === 'coordenador'
+  const resumoSource = useResumoPlanilha(ciclo, isCoordinator === true)
 
   const filtered = disciplinas
     .filter(d => isProfessor ? professorDisciplinas.includes(d.id) : true)
@@ -226,7 +238,7 @@ function DashboardInner() {
         </div>
 
         {/* KPIs */}
-        {loading ? <p style={{ color:'#64748b', fontSize:13, marginBottom:28 }}>Carregando métricas do ciclo…</p> : <>
+        {loading || dataCycle !== ciclo ? <p style={{ color:'#64748b', fontSize:13, marginBottom:28 }}>Carregando métricas do ciclo…</p> : <>
         <p style={{ fontSize:12, color:'#64748b', marginBottom:12 }}>{isCoordinator ? 'Resumos: inventário da planilha para o ciclo inteiro, sem aplicar a busca. Demais categorias: planejamento editorial por tema.' : 'Nesta visão, as categorias mostram o planejamento editorial por tema; não representam PDFs disponíveis.'}</p>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16, marginBottom:28 }}>
           {CONTENT_CATEGORY_KEYS.map(key => {
@@ -235,8 +247,14 @@ function DashboardInner() {
             const total = filtered.reduce((sum, d) => sum + (d.categorias?.[key].total_etapas ?? 0), 0)
             const complete = filtered.reduce((sum, d) => sum + (d.categorias?.[key].concluidos ?? 0), 0)
             const sourceResumos = key === 'resumos' && isCoordinator
-            const source = sourceResumos ? resumoPlanilha(ciclo) : null
-            const kpi = { label: config.label, value: source ? `${resumoPlanilhaPct(ciclo)}%` : `${total ? Math.round(done * 100 / total) : 0}%`, sub: source ? `${source.prontos}/${source.temas} PDFs prontos · ${source.faltando} faltando` : `${complete}/${totalTemas} com etapas concluídas`, color: config.color, tip: source ? 'Inventário de resumos da planilha de origem, independente das etapas manuais do painel.' : `${done} de ${total} etapas de ${config.label}. Planejamento por tema, não inventário confirmado. Questões e flashcards contam cobertura por tema, não itens do acervo.` }
+            const source = sourceResumos ? resumoSource.payload?.data : null
+            const kpi = {
+              label: config.label,
+              value: sourceResumos ? (source ? `${resumoPlanilhaPct(source)}%` : '—') : `${total ? Math.round(done * 100 / total) : 0}%`,
+              sub: sourceResumos ? (source ? `${source.prontos} de ${source.temas} temas com PDF pronto · ${source.faltando} faltando` : resumoSource.status === 'loading' ? 'Carregando planilha…' : 'Fonte indisponível; sem contagem') : `${complete}/${totalTemas} com etapas concluídas`,
+              color: config.color,
+              tip: sourceResumos ? 'Inventário da planilha de origem, independente das etapas manuais do painel.' : `${done} de ${total} etapas de ${config.label}. Planejamento por tema, não inventário confirmado. Questões e flashcards contam cobertura por tema, não itens do acervo.`,
+            }
             return (
             <button type="button" key={key} title={kpi.tip} aria-pressed={category === key} onClick={() => setCategory(key)} style={{ textAlign:'left', fontFamily:'inherit', background:category === key ? `${config.color}10` : 'rgba(0,0,0,0.03)', border:`1px solid ${category === key ? config.color : 'rgba(0,0,0,0.06)'}`, borderRadius:16, padding:'20px 24px', cursor:'pointer' }}>
               <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', display:'flex', alignItems:'center', gap:5 }}>
@@ -245,12 +263,14 @@ function DashboardInner() {
               </div>
               <div style={{ fontSize:32, fontWeight:700, color:kpi.color, lineHeight:1 }}>{kpi.value}</div>
               <div style={{ fontSize:12, color:'#94a3b8', marginTop:6 }}>{kpi.sub}</div>
-              <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{source ? 'Fonte: planilha · ciclo inteiro' : config.unit}</div>
+              <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{sourceResumos ? `Fonte: planilha · ${resumoSource.payload?.source_state === 'online' ? 'online' : resumoSource.payload ? 'retrato datado' : 'aguardando fonte'} · ciclo inteiro` : config.unit}</div>
             </button>
           )})}
         </div>
 
-        {isCoordinator && category === 'resumos' && <ResumoPlanilhaPanel ciclo={ciclo} />}
+        {isCoordinator && category === 'resumos' && (resumoSource.payload
+          ? <ResumoPlanilhaPanel ciclo={ciclo} payload={resumoSource.payload} onRefresh={resumoSource.refresh} refreshState={resumoSource.status} />
+          : <p role="status" style={{ color:'#92400e', fontSize:13 }}>{resumoSource.status === 'loading' ? 'Carregando inventário da planilha…' : 'Inventário de resumos indisponível; nenhum total foi estimado.'}</p>)}
         </>}
 
         {/* Weekly Calendar */}
