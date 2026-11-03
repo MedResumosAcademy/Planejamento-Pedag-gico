@@ -4,6 +4,7 @@
 // IMPORTANT (real data): there is no per-stage history in the DB, so velocity &
 // projection are ESTIMATES derived from `temas.updated_at`. They are labeled as
 // such in the UI. A future `tema_eventos` log would make them exact.
+import { CONTENT_CATEGORIES, categoryStages, type ContentCategory, type ContentStage, type CategoryTopic } from './content-categories'
 
 // Pipeline REAL do banco: 4 etapas de material + 8 de vídeo + 2 complementares = 14.
 export const STAGES = [
@@ -21,16 +22,16 @@ export const STAGE_LABELS = [
 ]
 
 export const STAGE_GROUP = [
-  'Material', 'Material', 'Material', 'Material',
-  'Vídeo', 'Vídeo', 'Vídeo', 'Vídeo',
-  'Vídeo', 'Vídeo', 'Vídeo', 'Vídeo',
-  'Complementar', 'Complementar',
+  'Resumos', 'Resumos', 'Resumos', 'Resumos',
+  'Videoaulas', 'Videoaulas', 'Videoaulas', 'Videoaulas',
+  'Videoaulas', 'Videoaulas', 'Videoaulas', 'Videoaulas',
+  'Questões', 'Flashcards',
 ]
 
 export const N_STAGES = STAGES.length
 
 // ---- Structural input types (compatible with the app's @/types) ----
-export interface TemaLike {
+export interface TemaLike extends CategoryTopic {
   id: number
   disciplina_id: number
   ordem?: number
@@ -54,8 +55,9 @@ export interface ColabLike {
 export interface Filter { discId?: number | null; profId?: string | null }
 
 // ---- Helpers ----
-export const doneCount = (t: TemaLike) => STAGES.reduce((a, s) => a + (t[s] === 'concluido' ? 1 : 0), 0)
-export const wipCount = (t: TemaLike) => STAGES.reduce((a, s) => a + (t[s] === 'em_andamento' ? 1 : 0), 0)
+const selectedStages = (category?: ContentCategory): readonly ContentStage[] => category ? categoryStages(category) : STAGES
+export const doneCount = (t: TemaLike, category?: ContentCategory) => selectedStages(category).reduce((a, s) => a + (t[s] === 'concluido' ? 1 : 0), 0)
+export const wipCount = (t: TemaLike, category?: ContentCategory) => selectedStages(category).reduce((a, s) => a + (t[s] === 'em_andamento' ? 1 : 0), 0)
 
 const DAY = 86400000
 const toDate = (d: string | Date) => (d instanceof Date ? d : new Date(d))
@@ -82,21 +84,21 @@ export function filterGravs(gravs: GravLike[], colabs: ColabLike[], f: Filter): 
 }
 
 // Velocity ESTIMATE: stages on temas touched within `weeks` window, per week.
-export function velocityEstimate(temas: TemaLike[], today: string | Date, weeks = 4): number {
+export function velocityEstimate(temas: TemaLike[], today: string | Date, weeks = 4, category?: ContentCategory): number {
   const cutoff = toDate(today).getTime() - weeks * 7 * DAY
   let recent = 0
   for (const t of temas) {
-    if (t.updated_at && toDate(t.updated_at).getTime() >= cutoff) recent += doneCount(t)
+    if (t.updated_at && toDate(t.updated_at).getTime() >= cutoff) recent += doneCount(t, category)
   }
   return recent / weeks
 }
 
 export interface Projection { date: string | null; onTrack: boolean | null; velocity: number; remaining: number; weeksLeft: number | null }
-export function projection(temas: TemaLike[], today: string | Date, target: string | Date, weeks = 4): Projection {
-  const total = temas.length * N_STAGES
-  const done = temas.reduce((a, t) => a + doneCount(t), 0)
+export function projection(temas: TemaLike[], today: string | Date, target: string | Date, weeks = 4, category?: ContentCategory): Projection {
+  const total = temas.length * selectedStages(category).length
+  const done = temas.reduce((a, t) => a + doneCount(t, category), 0)
   const remaining = total - done
-  const v = velocityEstimate(temas, today, weeks)
+  const v = velocityEstimate(temas, today, weeks, category)
   if (temas.length === 0 || v <= 0 || remaining <= 0) {
     return { date: remaining <= 0 && temas.length > 0 ? toDate(today).toISOString() : null, onTrack: remaining <= 0 ? true : null, velocity: v, remaining, weeksLeft: remaining <= 0 ? 0 : null }
   }
@@ -110,11 +112,11 @@ export interface Kpis {
   temasConcluidos: number; velocity: number; projection: Projection
   gravFeitas: number; gravAgendadas: number; pendencias: number
 }
-export function kpis(temas: TemaLike[], gravs: GravLike[], today: string | Date, target: string | Date): Kpis {
-  const totalStages = temas.length * N_STAGES
-  const doneStages = temas.reduce((a, t) => a + doneCount(t), 0)
-  const temasConcluidos = temas.filter(t => t.status_geral === 'concluido' || doneCount(t) === N_STAGES).length
-  const proj = projection(temas, today, target)
+export function kpis(temas: TemaLike[], gravs: GravLike[], today: string | Date, target: string | Date, category?: ContentCategory): Kpis {
+  const totalStages = temas.length * selectedStages(category).length
+  const doneStages = temas.reduce((a, t) => a + doneCount(t, category), 0)
+  const temasConcluidos = temas.filter(t => (!category && t.status_geral === 'concluido') || doneCount(t, category) === selectedStages(category).length).length
+  const proj = projection(temas, today, target, 4, category)
   return {
     totalTemas: temas.length, totalStages, doneStages,
     progressoPct: totalStages ? Math.round(doneStages * 100 / totalStages) : 0,
@@ -126,16 +128,17 @@ export function kpis(temas: TemaLike[], gravs: GravLike[], today: string | Date,
 }
 
 export interface FunnelRow { stage: string; label: string; group: string; concl: number; wip: number; fila: number }
-export function funnel(temas: TemaLike[]): { rows: FunnelRow[]; bottleneck: number } {
-  const rows = STAGES.map((s, i) => {
+export function funnel(temas: TemaLike[], category?: ContentCategory): { rows: FunnelRow[]; bottleneck: number } {
+  const stages = selectedStages(category)
+  const rows = stages.map((s, i) => {
     let concl = 0, wip = 0, fila = 0
     for (const t of temas) {
       const v = t[s]
       if (v === 'concluido') concl++
       else if (v === 'em_andamento') wip++
-      else if ((i === 0 || t[STAGES[i - 1]] === 'concluido')) fila++
+      else if ((i === 0 || t[stages[i - 1]] === 'concluido')) fila++
     }
-    return { stage: s, label: STAGE_LABELS[i], group: STAGE_GROUP[i], concl, wip, fila }
+    return { stage: s, label: STAGE_LABELS[STAGES.indexOf(s)], group: category ? CONTENT_CATEGORIES[category].label : STAGE_GROUP[i], concl, wip, fila }
   })
   let bottleneck = 0, mx = -1
   rows.forEach((r, i) => { if (r.wip > mx) { mx = r.wip; bottleneck = i } })
@@ -146,7 +149,7 @@ export interface PersonRow {
   id: string; nome: string; nDisc: number; nTemas: number; pct: number
   recentDone: number; wip: number; grav: number; discNomes: string[]
 }
-export function people(colabs: ColabLike[], temas: TemaLike[], gravs: GravLike[], discs: DiscLike[], today: string | Date, f: Filter): PersonRow[] {
+export function people(colabs: ColabLike[], temas: TemaLike[], gravs: GravLike[], discs: DiscLike[], today: string | Date, f: Filter, category?: ContentCategory): PersonRow[] {
   const discName = new Map(discs.map(d => [d.id, d.nome]))
   const cutoff = toDate(today).getTime() - 4 * 7 * DAY
   const profs = colabs.filter(c => c.nivel === 'professor' && (!f.profId || c.id === f.profId))
@@ -154,10 +157,10 @@ export function people(colabs: ColabLike[], temas: TemaLike[], gravs: GravLike[]
     let dids = (p.professor_disciplinas?.map(d => d.disciplina_id) ?? [])
     if (f.discId != null) dids = dids.filter(id => id === f.discId)
     const ts = temas.filter(t => dids.includes(t.disciplina_id))
-    const total = ts.length * N_STAGES
-    const done = ts.reduce((a, t) => a + doneCount(t), 0)
-    const recentDone = ts.reduce((a, t) => a + (t.updated_at && toDate(t.updated_at).getTime() >= cutoff ? doneCount(t) : 0), 0)
-    const wip = ts.reduce((a, t) => a + wipCount(t), 0)
+    const total = ts.length * selectedStages(category).length
+    const done = ts.reduce((a, t) => a + doneCount(t, category), 0)
+    const recentDone = ts.reduce((a, t) => a + (t.updated_at && toDate(t.updated_at).getTime() >= cutoff ? doneCount(t, category) : 0), 0)
+    const wip = ts.reduce((a, t) => a + wipCount(t, category), 0)
     const grav = gravs.filter(g => g.professor_id === p.id && g.status === 'concluida').length
     return {
       id: p.id, nome: p.nome, nDisc: dids.length, nTemas: ts.length,
@@ -170,13 +173,13 @@ export function people(colabs: ColabLike[], temas: TemaLike[], gravs: GravLike[]
 }
 
 export interface RiskRow { id: number; nome: string; cor: string; nTemas: number; pct: number; velocity: number; date: string | null; onTrack: boolean | null }
-export function riskByDiscipline(discs: DiscLike[], temas: TemaLike[], today: string | Date, target: string | Date, f: Filter): RiskRow[] {
+export function riskByDiscipline(discs: DiscLike[], temas: TemaLike[], today: string | Date, target: string | Date, f: Filter, category?: ContentCategory): RiskRow[] {
   const rows = discs.filter(d => f.discId == null || d.id === f.discId).map(d => {
     const ts = temas.filter(t => t.disciplina_id === d.id)
     if (!ts.length) return null
-    const total = ts.length * N_STAGES
-    const done = ts.reduce((a, t) => a + doneCount(t), 0)
-    const proj = projection(ts, today, target)
+    const total = ts.length * selectedStages(category).length
+    const done = ts.reduce((a, t) => a + doneCount(t, category), 0)
+    const proj = projection(ts, today, target, 4, category)
     return { id: d.id, nome: d.nome, cor: d.cor, nTemas: ts.length, pct: Math.round(done * 100 / total), velocity: proj.velocity, date: proj.date, onTrack: proj.onTrack }
   }).filter(Boolean) as RiskRow[]
   rows.sort((a, b) => {

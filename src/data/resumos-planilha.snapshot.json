@@ -1,0 +1,327 @@
+{
+  "version": 1,
+  "source": "Controle dos resumos — Ciclo Básico e Ciclo Clínico",
+  "source_url": "https://docs.google.com/spreadsheets/d/1Dh-XqkR5SmoVd5LQvJacffQnKkpBn-4JpQumH_N_2LM/edit",
+  "source_file_sha256": "0f4aec94b6692423f62a8a1efc9d8d22cccb025a32239b1b3e19d65e6171253f",
+  "source_read_at": {
+    "basico": "2026-11-02 18:02",
+    "clinico": "2026-11-02 18:04"
+  },
+  "excluded_rows": 44,
+  "cycles": {
+    "basico": {
+      "temas": 273,
+      "prontos": 240,
+      "faltando": 33,
+      "disciplines": [
+        {
+          "nome": "ANATOMIA SISTÊMICA",
+          "temas": 11,
+          "prontos": 11,
+          "faltando": 0
+        },
+        {
+          "nome": "ANATOMIA TOPOGRÁFICA",
+          "temas": 7,
+          "prontos": 6,
+          "faltando": 1
+        },
+        {
+          "nome": "BASES DA TÉCNICA CIRÚRGICA",
+          "temas": 16,
+          "prontos": 15,
+          "faltando": 1
+        },
+        {
+          "nome": "BIOFÍSICA",
+          "temas": 7,
+          "prontos": 7,
+          "faltando": 0
+        },
+        {
+          "nome": "BIOQUÍMICA",
+          "temas": 18,
+          "prontos": 17,
+          "faltando": 1
+        },
+        {
+          "nome": "CITOLOGIA",
+          "temas": 12,
+          "prontos": 12,
+          "faltando": 0
+        },
+        {
+          "nome": "EMBRIOLOGIA",
+          "temas": 8,
+          "prontos": 8,
+          "faltando": 0
+        },
+        {
+          "nome": "EPIDEMIOLOGIA E BIOESTATÍSTICA",
+          "temas": 15,
+          "prontos": 15,
+          "faltando": 0
+        },
+        {
+          "nome": "FARMACOLOGIA",
+          "temas": 23,
+          "prontos": 23,
+          "faltando": 0
+        },
+        {
+          "nome": "FISIOLOGIA",
+          "temas": 14,
+          "prontos": 10,
+          "faltando": 4
+        },
+        {
+          "nome": "GENÉTICA",
+          "temas": 14,
+          "prontos": 14,
+          "faltando": 0
+        },
+        {
+          "nome": "HABILIDADE MÉDICA E TÉCNICA DE ENFERMAGEM",
+          "temas": 6,
+          "prontos": 6,
+          "faltando": 0
+        },
+        {
+          "nome": "HISTOLOGIA",
+          "temas": 19,
+          "prontos": 0,
+          "faltando": 19
+        },
+        {
+          "nome": "IMUNOLOGIA",
+          "temas": 17,
+          "prontos": 17,
+          "faltando": 0
+        },
+        {
+          "nome": "MICROBIOLOGIA",
+          "temas": 15,
+          "prontos": 15,
+          "faltando": 0
+        },
+        {
+          "nome": "NEUROANATOMIA",
+          "temas": 21,
+          "prontos": 21,
+          "faltando": 0
+        },
+        {
+          "nome": "PARASITOLOGIA",
+          "temas": 17,
+          "prontos": 17,
+          "faltando": 0
+        },
+        {
+          "nome": "PSICOLOGIA",
+          "temas": 8,
+          "prontos": 1,
+          "faltando": 7
+        },
+        {
+          "nome": "SEMIOLOGIA",
+          "temas": 17,
+          "prontos": 17,
+          "faltando": 0
+        },
+        {
+          "nome": "SUPORTE BÁSICO DE VIDA",
+          "temas": 8,
+          "prontos": 8,
+          "faltando": 0
+        }
+      ]
+    },
+    "clinico": {
+      "temas": 446,
+      "prontos": 318,
+      "faltando": 128,
+      "disciplines": [
+        {
+          "nome": "ANESTESIOLOGIA",
+          "temas": 11,
+          "prontos": 11,
+          "faltando": 0
+        },
+        {
+          "nome": "CARDIOLOGIA",
+          "temas": 13,
+          "prontos": 12,
+          "faltando": 1
+        },
+        {
+          "nome": "CIRURGIA ABDOMINAL",
+          "temas": 32,
+          "prontos": 14,
+          "faltando": 18
+        },
+        {
+          "nome": "CIRURGIA DE CABEÇA E PESCOÇO",
+          "temas": 10,
+          "prontos": 3,
+          "faltando": 7
+        },
+        {
+          "nome": "CIRURGIA PEDIÁTRICA",
+          "temas": 6,
+          "prontos": 2,
+          "faltando": 4
+        },
+        {
+          "nome": "CIRURGIA TORÁCICA",
+          "temas": 17,
+          "prontos": 0,
+          "faltando": 17
+        },
+        {
+          "nome": "DERMATOLOGIA",
+          "temas": 14,
+          "prontos": 14,
+          "faltando": 0
+        },
+        {
+          "nome": "ENDOCRINOLOGIA",
+          "temas": 23,
+          "prontos": 22,
+          "faltando": 1
+        },
+        {
+          "nome": "GASTROENTEROLOGIA",
+          "temas": 15,
+          "prontos": 15,
+          "faltando": 0
+        },
+        {
+          "nome": "GERIATRIA",
+          "temas": 7,
+          "prontos": 7,
+          "faltando": 0
+        },
+        {
+          "nome": "GINECOLOGIA",
+          "temas": 22,
+          "prontos": 17,
+          "faltando": 5
+        },
+        {
+          "nome": "HEMATOLOGIA",
+          "temas": 23,
+          "prontos": 12,
+          "faltando": 11
+        },
+        {
+          "nome": "INFECTOLOGIA",
+          "temas": 13,
+          "prontos": 13,
+          "faltando": 0
+        },
+        {
+          "nome": "MEDICINA DE URGÊNCIA",
+          "temas": 14,
+          "prontos": 0,
+          "faltando": 14
+        },
+        {
+          "nome": "MEDICINA LEGAL",
+          "temas": 9,
+          "prontos": 0,
+          "faltando": 9
+        },
+        {
+          "nome": "NEFROLOGIA",
+          "temas": 10,
+          "prontos": 10,
+          "faltando": 0
+        },
+        {
+          "nome": "NEONATOLOGIA",
+          "temas": 19,
+          "prontos": 3,
+          "faltando": 16
+        },
+        {
+          "nome": "NEUROLOGIA",
+          "temas": 22,
+          "prontos": 14,
+          "faltando": 8
+        },
+        {
+          "nome": "OBSTETRÍCIA",
+          "temas": 19,
+          "prontos": 19,
+          "faltando": 0
+        },
+        {
+          "nome": "OFTALMOLOGIA",
+          "temas": 12,
+          "prontos": 10,
+          "faltando": 2
+        },
+        {
+          "nome": "ONCOLOGIA",
+          "temas": 15,
+          "prontos": 15,
+          "faltando": 0
+        },
+        {
+          "nome": "ORTOPEDIA",
+          "temas": 21,
+          "prontos": 21,
+          "faltando": 0
+        },
+        {
+          "nome": "OTORRINOLARINGOLOGIA",
+          "temas": 8,
+          "prontos": 8,
+          "faltando": 0
+        },
+        {
+          "nome": "PATOLOGIA",
+          "temas": 11,
+          "prontos": 11,
+          "faltando": 0
+        },
+        {
+          "nome": "PEDIATRIA",
+          "temas": 13,
+          "prontos": 13,
+          "faltando": 0
+        },
+        {
+          "nome": "PNEUMOLOGIA",
+          "temas": 24,
+          "prontos": 18,
+          "faltando": 6
+        },
+        {
+          "nome": "PSIQUIATRIA",
+          "temas": 10,
+          "prontos": 8,
+          "faltando": 2
+        },
+        {
+          "nome": "RADIOLOGIA",
+          "temas": 7,
+          "prontos": 0,
+          "faltando": 7
+        },
+        {
+          "nome": "REUMATOLOGIA",
+          "temas": 11,
+          "prontos": 11,
+          "faltando": 0
+        },
+        {
+          "nome": "UROLOGIA",
+          "temas": 15,
+          "prontos": 15,
+          "faltando": 0
+        }
+      ]
+    }
+  }
+}

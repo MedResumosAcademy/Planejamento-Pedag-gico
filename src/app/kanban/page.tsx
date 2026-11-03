@@ -1,9 +1,11 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
 import { useSession } from '@/hooks/useSession'
 import { CICLOS } from '@/lib/cycles'
+import CategorySwitcher, { useContentCategory } from '@/components/CategorySwitcher'
+import { CONTENT_CATEGORIES, categoryStages, categoryStatus } from '@/lib/content-categories'
 
 type Status = 'pendente' | 'em_andamento' | 'concluido'
 
@@ -16,34 +18,21 @@ interface Tema {
   comp_questoes:Status; comp_flashcards:Status
 }
 
-type Esteira = 'mat'|'vid'|'comp'
-
-const ESTEIRAS = [
-  { key:'mat' as Esteira, label:'Materiais', color:'#16a34a', campos:['mat_atualizado','mat_revisado','mat_diagramado','mat_conferencia'] },
-  { key:'vid' as Esteira, label:'Vídeo Aulas', color:'#2563eb', campos:['vid_envio_tema','vid_slide_pronto','vid_diagramacao','vid_aprovacao_slide','vid_agendamento','vid_gravacao_feita','vid_aprovacao_aula','vid_publicada'] },
-  { key:'comp' as Esteira, label:'Complementos', color:'#d97706', campos:['comp_questoes','comp_flashcards'] },
-]
-
 const COLS: { key:Status; label:string; color:string }[] = [
   { key:'pendente', label:'Pendente', color:'#94a3b8' },
   { key:'em_andamento', label:'Em Andamento', color:'#d97706' },
   { key:'concluido', label:'Concluído', color:'#16a34a' },
 ]
 
-function getEsteiraStatus(t: Tema, campos: string[]): Status {
-  const vals = campos.map(c => (t as any)[c] as Status)
-  if (vals.every(v => v==='concluido')) return 'concluido'
-  if (vals.some(v => v!=='pendente')) return 'em_andamento'
-  return 'pendente'
-}
-
-export default function KanbanPage() {
+function KanbanInner() {
   const { ciclo } = useCycle()
   const { loading: sessionLoading, isCoordinator } = useSession()
   const cycleConfig = CICLOS[ciclo]
   const [temas, setTemas] = useState<Tema[]>([])
   const [loading, setLoading] = useState(true)
-  const [esteira, setEsteira] = useState<Esteira>('mat')
+  const { category, setCategory } = useContentCategory()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
   const [dragId, setDragId] = useState<number|null>(null)
   const [dragOver, setDragOver] = useState<Status|null>(null)
 
@@ -57,51 +46,52 @@ export default function KanbanPage() {
 
   useEffect(() => { load() }, [load])
 
-  const e = ESTEIRAS.find(x => x.key===esteira)!
+  const e = { ...CONTENT_CATEGORIES[category], campos: categoryStages(category) }
 
   const cols: Record<Status, Tema[]> = { pendente:[], em_andamento:[], concluido:[] }
-  temas.forEach(t => { cols[getEsteiraStatus(t, e.campos)].push(t) })
+  temas.forEach(t => { cols[categoryStatus(t, category)].push(t) })
 
   const moveCard = async (tema: Tema, novoStatus: Status) => {
-    for (const campo of e.campos) {
-      await fetch('/api/themes', {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({ id:tema.id, campo, valor:novoStatus })
-      })
-    }
-    await load()
+    if (saving) return
+    setSaving(true); setError('')
+    try {
+      for (const campo of e.campos) {
+        const response = await fetch('/api/themes', {
+          method:'PATCH', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ id:tema.id, campo, valor:novoStatus })
+        })
+        if (!response.ok) throw new Error('Não foi possível atualizar todas as etapas. Confira o estado atual antes de tentar novamente.')
+      }
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Falha ao salvar.') }
+    finally { await load(); setSaving(false) }
   }
 
   return (
     <div style={{ minHeight:'100vh', background:'#f4f6fb' }}>
       {/* Header */}
-      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(244,246,251,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'14px 32px', display:'flex', alignItems:'center', gap:16 }}>
+      <div style={{ position:'sticky', top:0, zIndex:40, background:'rgba(244,246,251,0.95)', backdropFilter:'blur(12px)', borderBottom:'1px solid rgba(0,0,0,0.06)', padding:'14px 32px', display:'flex', flexWrap:'wrap', alignItems:'center', gap:16 }}>
         <Link href="/" style={{ textDecoration:'none', color:'#64748b', fontSize:13 }}>← Dashboard</Link>
         <div style={{ width:1, height:20, background:'rgba(0,0,0,0.1)' }} />
         <h1 style={{ fontSize:18, fontWeight:700, color:'#0f172a', margin:0 }}>Kanban</h1>
         {isCoordinator && <CycleSwitcher compact />}
-        <div style={{ display:'flex', gap:8, marginLeft:16 }}>
-          {ESTEIRAS.map(ex => (
-            <button key={ex.key} onClick={()=>setEsteira(ex.key)} style={{ padding:'7px 16px', borderRadius:8, fontSize:13, cursor:'pointer', fontFamily:'inherit', fontWeight:600, background:esteira===ex.key?`${ex.color}20`:'rgba(0,0,0,0.04)', border:esteira===ex.key?`1px solid ${ex.color}60`:'1px solid rgba(0,0,0,0.08)', color:esteira===ex.key?ex.color:'#64748b', transition:'all 0.15s' }}>
-              {ex.label}
-            </button>
-          ))}
-        </div>
+        <CategorySwitcher category={category} onChange={setCategory} />
         <div style={{ marginLeft:'auto', fontSize:13, color:'#94a3b8' }}>{loading?'Carregando...':`${temas.length} temas · ${isCoordinator ? cycleConfig.label : 'minhas disciplinas'}`}</div>
       </div>
 
       <div style={{ padding:'24px 32px' }}>
+        {error && <p role="alert" style={{ color:'#b91c1c' }}>{error}</p>}
+        <p style={{ color:'#475569', fontSize:13 }}>Esteira de {e.label}. Mover um tema altera somente as etapas desta categoria.{saving ? ' Salvando…' : ''}</p>
         {/* Etapas da esteira */}
-        <div style={{ display:'flex', gap:8, marginBottom:20 }}>
+        <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:20 }}>
           {e.campos.map(c => (
             <span key={c} style={{ fontSize:12, padding:'4px 12px', borderRadius:20, background:`${e.color}15`, border:`1px solid ${e.color}30`, color:e.color, fontWeight:500 }}>
-              {c.replace('mat_','').replace('vid_','').replace('comp_','').replace('_',' ')}
+              {e.stages.find(stage => stage.key === c)?.label}
             </span>
           ))}
         </div>
 
         {/* Board */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:16 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(260px,1fr))', gap:16 }}>
           {COLS.map(col => (
             <div key={col.key}
               onDragOver={e=>{ e.preventDefault(); setDragOver(col.key) }}
@@ -119,7 +109,7 @@ export default function KanbanPage() {
               {/* Cards */}
               {cols[col.key].map(t => (
                 <div key={t.id}
-                  draggable
+                  draggable={!saving}
                   onDragStart={()=>setDragId(t.id)}
                   onDragEnd={()=>setDragId(null)}
                   style={{ background:dragId===t.id?'rgba(0,0,0,0.08)':'rgba(0,0,0,0.04)', border:`1px solid ${t.disciplina_cor}30`, borderLeft:`3px solid ${t.disciplina_cor}`, borderRadius:10, padding:'12px 14px', cursor:'grab', marginBottom:8, opacity:dragId===t.id?0.5:1, transition:'opacity 0.15s' }}
@@ -130,8 +120,14 @@ export default function KanbanPage() {
                     <div style={{ fontSize:11, color:'#94a3b8' }}>
                       {e.campos.filter(c=>(t as any)[c]==='concluido').length}/{e.campos.length} etapas
                     </div>
-                    {t.paginas && <div style={{ fontSize:11, color:'#2563eb' }}>{t.paginas}p</div>}
+                    <Link href={`/disciplinas?id=${t.disciplina_id}&categoria=${category}`} style={{ fontSize:12, color:e.color }}>Ver disciplina</Link>
                   </div>
+                  <label style={{ display:'block', marginTop:10, fontSize:12, color:'#475569' }}>
+                    Mover em {e.label}
+                    <select aria-label={`Status de ${t.tema_especifico} em ${e.label}`} value={col.key} disabled={saving} onChange={event => moveCard(t, event.target.value as Status)} style={{ display:'block', width:'100%', minHeight:44, marginTop:4, border:'1px solid #cbd5e1', borderRadius:6, background:'#fff', padding:8 }}>
+                      {COLS.map(status => <option key={status.key} value={status.key}>{status.label}</option>)}
+                    </select>
+                  </label>
                 </div>
               ))}
 
@@ -146,4 +142,8 @@ export default function KanbanPage() {
       </div>
     </div>
   )
+}
+
+export default function KanbanPage() {
+  return <Suspense fallback={<div>Carregando…</div>}><KanbanInner /></Suspense>
 }

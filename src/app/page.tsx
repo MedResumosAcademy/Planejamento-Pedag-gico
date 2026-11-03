@@ -7,13 +7,17 @@ import { createClient } from '@/lib/supabase/client'
 import GerencialDashboard from '@/components/GerencialDashboard'
 import { CycleSwitcher, useCycle } from '@/components/CycleProvider'
 import { CICLOS } from '@/lib/cycles'
+import CategorySwitcher, { useContentCategory } from '@/components/CategorySwitcher'
+import ResumoPlanilhaPanel from '@/components/ResumoPlanilhaPanel'
+import { CONTENT_CATEGORIES, CONTENT_CATEGORY_KEYS, type ContentCategory, type CategorySummary } from '@/lib/content-categories'
+import { resumoPlanilha, resumoPlanilhaPct } from '@/lib/resumos-planilha'
 import type { Ciclo } from '@/types'
 
 interface DiscStats {
   id: number; nome: string; cor: string; microassunto: string | null
   ciclo: Ciclo
   total_temas: number; concluidos: number; em_andamento: number; pendentes: number
-  paginas_totais: number; progresso_geral: number
+  categorias: Record<ContentCategory, CategorySummary>; progresso_geral: number
   etapas_concluidas: number; total_etapas: number
 }
 interface Gravacao {
@@ -53,6 +57,8 @@ function DashboardInner() {
   const router = useRouter()
   const sp = useSearchParams()
   const { ciclo } = useCycle()
+  const { category, setCategory } = useContentCategory()
+  const categoryConfig = CONTENT_CATEGORIES[category]
   const cycleConfig = CICLOS[ciclo]
   const view: 'macro' | 'gerencial' = sp.get('view') === 'gerencial' ? 'gerencial' : 'macro'
   const [disciplinas, setDisciplinas] = useState<DiscStats[]>([])
@@ -120,11 +126,11 @@ function DashboardInner() {
   const filtered = disciplinas
     .filter(d => isProfessor ? professorDisciplinas.includes(d.id) : true)
     .filter(d => d.nome.toLowerCase().includes(busca.toLowerCase()))
+    .map(d => ({ ...d, ...d.categorias?.[category] }))
 
   const totalTemas = filtered.reduce((a, d) => a + d.total_temas, 0)
   const totalConcluidos = filtered.reduce((a, d) => a + d.concluidos, 0)
   const totalAndamento = filtered.reduce((a, d) => a + d.em_andamento, 0)
-  const totalPaginas = filtered.reduce((a, d) => a + (d.paginas_totais || 0), 0)
   // Progresso por etapas (mesmo cálculo do painel Gerencial), não por temas 100% concluídos.
   const totalEtapas = filtered.reduce((a, d) => a + (d.total_etapas || 0), 0)
   const totalEtapasConcluidas = filtered.reduce((a, d) => a + (d.etapas_concluidas || 0), 0)
@@ -132,8 +138,9 @@ function DashboardInner() {
 
   const navItems = [
     { href:'/', label:'Dashboard', icon:'📊' },
-    { href:'/disciplinas', label:'Disciplinas', icon:'📚' },
-    { href:'/kanban', label:'Kanban', icon:'🗂️' },
+    { href:`/disciplinas?categoria=${category}`, label:'Disciplinas', icon:'📚' },
+    { href:`/kanban?categoria=${category}`, label:'Kanban', icon:'🗂️' },
+    ...(isCoordinator ? [{ href:'/acervo', label:'Acervo e fábricas', icon:'📁' }] : []),
     { href:'/agenda', label:'Agenda', icon:'📅' },
     ...(isCoordinator ? [{ href:'/admin/colaboradores', label:'Collaborators', icon:'👥' }] : [])
   ]
@@ -187,8 +194,7 @@ function DashboardInner() {
         {sidebarOpen && (
           <div style={{ padding:'0 20px 16px', fontSize:11, color:'#94a3b8' }}>
             {userInfo?.nome && <div style={{ marginBottom:4, color:'#64748b', fontWeight:500, fontSize:12 }}>{userInfo.nome}</div>}
-            {totalTemas.toLocaleString('pt-BR')} temas · {filtered.length} disciplinas<br/>
-            ~{totalPaginas.toLocaleString('pt-BR')} páginas
+            Planejamento editorial: {totalTemas.toLocaleString('pt-BR')} temas · {filtered.length} disciplinas
           </div>
         )}
       </div>
@@ -200,12 +206,13 @@ function DashboardInner() {
           {isCoordinator && <CycleSwitcher />}
           <div style={{ display:'inline-flex', background:'rgba(0,0,0,0.04)', border:'1px solid rgba(0,0,0,0.08)', borderRadius:10, padding:3, gap:3 }}>
             {([['macro','📊 Macro'],['gerencial','📈 Gerencial']] as const).map(([v,label]) => (
-              <button key={v} onClick={() => router.push(v==='macro' ? '/' : '/?view=gerencial')}
+              <button key={v} onClick={() => router.push(`/?categoria=${category}${v === 'gerencial' ? '&view=gerencial' : ''}`)}
                 style={{ padding:'7px 16px', borderRadius:8, border:'none', cursor:'pointer', fontSize:13, fontWeight:600, fontFamily:'inherit', background: view===v ? 'rgba(167,139,250,0.18)' : 'transparent', color: view===v ? '#7c3aed' : '#64748b' }}>
                 {label}
               </button>
             ))}
           </div>
+          <CategorySwitcher category={category} onChange={setCategory} />
         </div>
         {view === 'gerencial' ? <GerencialDashboard ciclo={isCoordinator ? ciclo : undefined} /> : (
         <div style={{ padding:'24px 40px 40px' }}>
@@ -219,23 +226,32 @@ function DashboardInner() {
         </div>
 
         {/* KPIs */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:16, marginBottom:28 }}>
-          {[
-            { label:'Progresso Geral', value:`${progressoGeral}%`, sub:`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas`, color:'#7c3aed', tip:'Média de conclusão de todas as etapas de produção. Cada tema tem 14 etapas (4 de material, 8 de vídeo, 2 de complementos).' },
-            { label:'Em Andamento', value:totalAndamento, sub:'temas em produção', color:'#d97706', tip:'Temas que já têm pelo menos uma etapa concluída, mas ainda não foram 100% finalizados.' },
-            { label:'Concluídos', value:totalConcluidos, sub:'temas finalizados', color:'#16a34a', tip:'Temas com todas as 14 etapas concluídas.' },
-            { label:'Total de Páginas', value:totalPaginas.toLocaleString('pt-BR'), sub:isCoordinator ? `meta: ${cycleConfig.expectedPages.toLocaleString('pt-BR')} pgs` : `${filtered.length} disciplinas`, color:'#2563eb', tip:'Soma das páginas de todos os temas visíveis.' },
-          ].map(kpi => (
-            <div key={kpi.label} title={kpi.tip} style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', cursor:'help' }}>
+        {loading ? <p style={{ color:'#64748b', fontSize:13, marginBottom:28 }}>Carregando métricas do ciclo…</p> : <>
+        <p style={{ fontSize:12, color:'#64748b', marginBottom:12 }}>{isCoordinator ? 'Resumos: inventário da planilha para o ciclo inteiro, sem aplicar a busca. Demais categorias: planejamento editorial por tema.' : 'Nesta visão, as categorias mostram o planejamento editorial por tema; não representam PDFs disponíveis.'}</p>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:16, marginBottom:28 }}>
+          {CONTENT_CATEGORY_KEYS.map(key => {
+            const config = CONTENT_CATEGORIES[key]
+            const done = filtered.reduce((sum, d) => sum + (d.categorias?.[key].etapas_concluidas ?? 0), 0)
+            const total = filtered.reduce((sum, d) => sum + (d.categorias?.[key].total_etapas ?? 0), 0)
+            const complete = filtered.reduce((sum, d) => sum + (d.categorias?.[key].concluidos ?? 0), 0)
+            const sourceResumos = key === 'resumos' && isCoordinator
+            const source = sourceResumos ? resumoPlanilha(ciclo) : null
+            const kpi = { label: config.label, value: source ? `${resumoPlanilhaPct(ciclo)}%` : `${total ? Math.round(done * 100 / total) : 0}%`, sub: source ? `${source.prontos}/${source.temas} PDFs prontos · ${source.faltando} faltando` : `${complete}/${totalTemas} com etapas concluídas`, color: config.color, tip: source ? 'Inventário de resumos da planilha de origem, independente das etapas manuais do painel.' : `${done} de ${total} etapas de ${config.label}. Planejamento por tema, não inventário confirmado. Questões e flashcards contam cobertura por tema, não itens do acervo.` }
+            return (
+            <button type="button" key={key} title={kpi.tip} aria-pressed={category === key} onClick={() => setCategory(key)} style={{ textAlign:'left', fontFamily:'inherit', background:category === key ? `${config.color}10` : 'rgba(0,0,0,0.03)', border:`1px solid ${category === key ? config.color : 'rgba(0,0,0,0.06)'}`, borderRadius:16, padding:'20px 24px', cursor:'pointer' }}>
               <div style={{ fontSize:11, color:'#64748b', marginBottom:8, fontWeight:500, textTransform:'uppercase', letterSpacing:'0.5px', display:'flex', alignItems:'center', gap:5 }}>
                 {kpi.label}
                 <span style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:13, height:13, borderRadius:'50%', border:'1px solid #cbd5e1', color:'#94a3b8', fontSize:9, fontWeight:700 }}>i</span>
               </div>
               <div style={{ fontSize:32, fontWeight:700, color:kpi.color, lineHeight:1 }}>{kpi.value}</div>
               <div style={{ fontSize:12, color:'#94a3b8', marginTop:6 }}>{kpi.sub}</div>
-            </div>
-          ))}
+              <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{source ? 'Fonte: planilha · ciclo inteiro' : config.unit}</div>
+            </button>
+          )})}
         </div>
+
+        {isCoordinator && category === 'resumos' && <ResumoPlanilhaPanel ciclo={ciclo} />}
+        </>}
 
         {/* Weekly Calendar */}
         <div style={{ background:'rgba(0,0,0,0.02)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
@@ -324,7 +340,7 @@ function DashboardInner() {
         {/* Progress bar */}
         <div style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:16, padding:'20px 24px', marginBottom:28 }}>
           <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
-            <span style={{ fontSize:13, fontWeight:600, color:'#334155' }}>Progresso Total</span>
+            <span style={{ fontSize:13, fontWeight:600, color:'#334155' }}>Planejamento editorial · {categoryConfig.label}</span>
             <span title={`${totalEtapasConcluidas.toLocaleString('pt-BR')} de ${totalEtapas.toLocaleString('pt-BR')} etapas concluídas`} style={{ fontSize:13, color:'#7c3aed', fontWeight:700, cursor:'help' }}>{progressoGeral}%</span>
           </div>
           <div style={{ background:'rgba(0,0,0,0.06)', borderRadius:6, height:10, overflow:'hidden' }}>
@@ -332,7 +348,7 @@ function DashboardInner() {
           </div>
           <div style={{ display:'flex', gap:24, marginTop:12 }}>
             {[
-              {label:'Concluídos',color:'#16a34a',n:totalConcluidos,tip:'Temas com todas as 14 etapas concluídas.'},
+              {label:'Concluídos',color:'#16a34a',n:totalConcluidos,tip:'Temas com todas as etapas da categoria selecionada concluídas.'},
               {label:'Em Andamento',color:'#d97706',n:totalAndamento,tip:'Temas com pelo menos uma etapa feita, mas ainda não finalizados.'},
               {label:'Pendentes',color:'#64748b',n:totalTemas-totalConcluidos-totalAndamento,tip:'Temas que ainda não tiveram nenhuma etapa iniciada.'},
             ].map(l => (
@@ -357,7 +373,7 @@ function DashboardInner() {
             {filtered.map(d => {
               const pct = d.progresso_geral || 0
               return (
-                <Link key={d.id} href={`/disciplinas?id=${d.id}`} style={{ textDecoration:'none' }}>
+                <Link key={d.id} href={`/disciplinas?id=${d.id}&categoria=${category}`} style={{ textDecoration:'none' }}>
                   <div style={{ background:'rgba(0,0,0,0.03)', border:'1px solid rgba(0,0,0,0.06)', borderRadius:14, padding:'18px 20px', cursor:'pointer', transition:'all 0.2s' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor=`${d.cor}60`; (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.05)' }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,0,0,0.06)'; (e.currentTarget as HTMLElement).style.background='rgba(0,0,0,0.03)' }}
@@ -369,7 +385,7 @@ function DashboardInner() {
                       </div>
                       <div style={{ textAlign:'right' }}>
                         <div title={`${d.etapas_concluidas} de ${d.total_etapas} etapas concluídas nesta disciplina`} style={{ fontSize:22, fontWeight:700, color:d.cor, cursor:'help' }}>{pct}%</div>
-                        <div style={{ fontSize:10, color:'#94a3b8' }}>{d.total_temas} temas</div>
+                        <div style={{ fontSize:10, color:'#94a3b8' }}>{d.total_temas} temas · planejamento editorial de {categoryConfig.label}</div>
                       </div>
                     </div>
                     <div style={{ background:'rgba(0,0,0,0.06)', borderRadius:4, height:6, overflow:'hidden', marginBottom:12 }}>
@@ -383,7 +399,6 @@ function DashboardInner() {
                       ].map(s => (
                         <div key={s.l} title={s.tip} style={{ fontSize:12, color:s.c, fontWeight:600, cursor:'help' }}>{s.l} {s.v}</div>
                       ))}
-                      {d.paginas_totais > 0 && <div title="Total de páginas da disciplina" style={{ fontSize:12, color:'#2563eb', marginLeft:'auto', fontWeight:600, cursor:'help' }}>{d.paginas_totais}p</div>}
                     </div>
                   </div>
                 </Link>

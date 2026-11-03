@@ -20,7 +20,10 @@ export default function Sidebar({ session }: { session: UserSession | null }) {
     { href: '/disciplinas', label: 'Disciplinas', icon: '📚' },
     { href: '/kanban', label: 'Kanban', icon: '🗂️' },
     { href: '/agenda', label: 'Agenda', icon: '📅' },
-    ...(session?.nivel === 'coordenador' ? [{ href: '/admin/colaboradores', label: 'Collaborators', icon: '👥' }] : []),
+    ...(session?.nivel === 'coordenador' ? [
+      { href: '/acervo', label: 'Acervo e fábricas', icon: '🔗' },
+      { href: '/admin/colaboradores', label: 'Collaborators', icon: '👥' },
+    ] : []),
   ]
 
   const W = open ? 220 : 64

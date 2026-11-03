@@ -6,6 +6,11 @@ import { getAllColaboradores } from '@/lib/repositories/colaboradores'
 import { getGravacoesRange } from '@/lib/repositories/gravacoes'
 import * as A from '@/lib/analytics'
 import { CICLOS } from '@/lib/cycles'
+import Link from 'next/link'
+import { useContentCategory } from '@/components/CategorySwitcher'
+import { CONTENT_CATEGORIES, CONTENT_CATEGORY_KEYS, categoryStages, categorySummary } from '@/lib/content-categories'
+import { resumoPlanilha, resumoPlanilhaPct } from '@/lib/resumos-planilha'
+import ResumoPlanilhaPanel from '@/components/ResumoPlanilhaPanel'
 import type { Ciclo, Disciplina, Tema, Gravacao, Colaborador } from '@/types'
 
 const DAY = 86400000
@@ -19,6 +24,8 @@ function avColor(id: string) {
 const Info = ({ t }: { t: string }) => <span className="i" title={t}>i</span>
 
 export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
+  const { category, setCategory } = useContentCategory()
+  const categoryConfig = CONTENT_CATEGORIES[category]
   const cycleConfig = CICLOS[ciclo ?? 'basico']
   const [disciplinas, setDisciplinas] = useState<Disciplina[]>([])
   const [temas, setTemas] = useState<Tema[]>([])
@@ -51,15 +58,16 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
     setProfId(null)
     setDrill(null)
   }, [ciclo])
+  useEffect(() => { setDrill(null) }, [category])
 
   const F: A.Filter = { discId, profId }
   const professores = colaboradores.filter(c => c.nivel === 'professor')
   const tF = useMemo(() => A.filterTemas(temas as any, colaboradores as any, F), [temas, colaboradores, discId, profId])
   const gF = useMemo(() => A.filterGravs(gravacoes as any, colaboradores as any, F), [gravacoes, colaboradores, discId, profId])
-  const k = useMemo(() => A.kpis(tF, gF, today, target), [tF, gF, today, target])
-  const fn = useMemo(() => A.funnel(tF), [tF])
-  const risk = useMemo(() => A.riskByDiscipline(disciplinas as any, temas as any, today, target, F), [disciplinas, temas, today, target, discId])
-  const ppl = useMemo(() => A.people(colaboradores as any, temas as any, gravacoes as any, disciplinas as any, today, F), [colaboradores, temas, gravacoes, disciplinas, discId, profId, today])
+  const k = useMemo(() => A.kpis(tF, gF, today, target, category), [tF, gF, today, target, category])
+  const fn = useMemo(() => A.funnel(tF, category), [tF, category])
+  const risk = useMemo(() => A.riskByDiscipline(disciplinas as any, tF, today, target, F, category), [disciplinas, tF, today, target, discId, category])
+  const ppl = useMemo(() => A.people(colaboradores as any, temas as any, gravacoes as any, disciplinas as any, today, F, category), [colaboradores, temas, gravacoes, disciplinas, discId, profId, today, category])
   const pend = useMemo(() => A.pendencias(gF, tF), [gF, tF])
   const discById = useMemo(() => new Map(disciplinas.map(d => [d.id, d])), [disciplinas])
   const profById = useMemo(() => new Map(colaboradores.map(c => [c.id, c])), [colaboradores])
@@ -74,15 +82,14 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
   const nF = tF.length || 1
 
   const kpis = [
-    { type: 'progresso', l: 'Progresso', v: k.progressoPct + '%', s: `${k.doneStages}/${k.totalStages} etapas`, c: '#7c3aed', tip: 'Etapas concluídas ÷ total. Cada tema tem 14 etapas.' },
-    { type: 'previsao', l: 'Previsão', v: projStr, s: proj.date ? (onTrack ? 'dentro da meta' : 'após a meta') : 'sem ritmo', c: proj.date ? (onTrack ? '#16a34a' : '#dc2626') : '#94a3b8', tip: 'Término projetado no ritmo atual vs. a meta.' },
-    { type: 'velocidade', l: 'Velocidade', v: k.velocity.toFixed(0), s: 'etapas/sem (est.)', c: '#2563eb', tip: 'Etapas por semana — estimativa das últimas 4 semanas.' },
+    { type: 'progresso', l: `Planejamento editorial · ${categoryConfig.label}`, v: k.progressoPct + '%', s: `${k.doneStages}/${k.totalStages} etapas`, c: categoryConfig.color, tip: 'Somente etapas manuais da categoria selecionada; não indica PDFs prontos na planilha.' },
+    { type: 'previsao', l: 'Previsão editorial', v: projStr, s: proj.date ? (onTrack ? 'dentro da meta' : 'após a meta') : 'sem ritmo', c: proj.date ? (onTrack ? '#16a34a' : '#dc2626') : '#94a3b8', tip: 'Projeção das etapas manuais, não dos PDFs da planilha.' },
+    { type: 'velocidade', l: 'Velocidade editorial', v: k.velocity.toFixed(0), s: 'etapas/sem (est.)', c: '#2563eb', tip: 'Estimativa das etapas manuais nas últimas 4 semanas; não mede PDFs da planilha.' },
     { type: 'gravacoes', l: 'Gravações', v: k.gravFeitas, s: `${k.gravAgendadas} agendadas`, c: '#0891b2', tip: 'Gravações concluídas no período; e quantas já estão agendadas.' },
     { type: 'pendencias', l: 'Pendências', v: k.pendencias, s: 'aprovar + remarcar', c: k.pendencias > 0 ? '#d97706' : '#94a3b8', tip: 'Propostas aguardando aprovação + canceladas a remarcar.' },
   ]
 
-  const STG = A.STAGES, LBL = A.STAGE_LABELS, GRP = A.STAGE_GROUP
-  const grpColor = (g: string) => g === 'Material' ? '#2563eb' : g === 'Vídeo' ? '#7c3aed' : '#db2777'
+  const STG = categoryStages(category), LBL = categoryConfig.stages.map(stage => stage.label)
   function drillSubtitle() {
     if (!drill) return ''
     switch (drill.type) {
@@ -91,7 +98,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
       case 'velocidade': return `~${k.velocity.toFixed(0)} etapas/semana · estimativa (sem histórico por etapa)`
       case 'gravacoes': return `${k.gravFeitas} concluídas · ${k.gravAgendadas} agendadas`
       case 'pendencias': return 'gravações que dependem de decisão'
-      case 'disc': return 'progresso por tema desta disciplina'
+      case 'disc': return `${categoryConfig.label} · progresso por tema desta disciplina`
       case 'stage': return 'temas em andamento ou na fila desta etapa'
       case 'prof': return 'disciplinas sob responsabilidade'
       default: return ''
@@ -102,7 +109,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
     if (drill.type === 'progresso') return (<>
       <div className="dsec">Por etapa</div>
       {STG.map((s, i) => { const c = tF.filter(t => (t as any)[s] === 'concluido').length; return (
-        <div key={s} className="drow"><span className="dl">{LBL[i]}</span><span className="dbar"><i style={{ width: (c / nF * 100) + '%', background: grpColor(GRP[i]) }} /></span><span className="dv">{c}/{nF}</span></div>) })}
+        <div key={s} className="drow"><span className="dl">{LBL[i]}</span><span className="dbar"><i style={{ width: (c / nF * 100) + '%', background: categoryConfig.color }} /></span><span className="dv">{c}/{tF.length}</span></div>) })}
       <div className="dsec">Por disciplina</div>
       {risk.map(r => (<div key={r.id} className="drow"><span className="dl" style={{ display: 'flex', gap: 6, alignItems: 'center' }}><i style={{ width: 8, height: 8, borderRadius: 2, background: r.cor, display: 'inline-block' }} />{r.nome}</span><span className="dbar"><i style={{ width: r.pct + '%', background: r.cor }} /></span><span className="dv">{r.pct}%</span></div>))}
     </>)
@@ -112,7 +119,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
       const cutoff = today.getTime() - 28 * DAY
       const recent = tF.filter(t => t.updated_at && new Date(t.updated_at).getTime() >= cutoff).sort((a, b) => new Date(b.updated_at!).getTime() - new Date(a.updated_at!).getTime())
       return (<><div className="dnote">Estimativa: temas atualizados nas últimas 4 semanas. O banco não guarda histórico por etapa, então é aproximado.</div>
-        {recent.length ? recent.map(t => (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">{discById.get(t.disciplina_id)?.nome?.split(' ')[0]} · {A.doneCount(t as any)}/{A.N_STAGES} · {fmt(t.updated_at!)}</span></div>)) : <div className="empty">Nenhuma atualização recente.</div>}</>)
+        {recent.length ? recent.map(t => (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">{discById.get(t.disciplina_id)?.nome?.split(' ')[0]} · {A.doneCount(t as any, category)}/{STG.length} · {fmt(t.updated_at!)}</span></div>)) : <div className="empty">Nenhuma atualização recente.</div>}</>)
     }
     if (drill.type === 'gravacoes') {
       const done = gF.filter(g => g.status === 'concluida').sort((a, b) => new Date(b.data_hora).getTime() - new Date(a.data_hora).getTime())
@@ -127,10 +134,8 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
     if (drill.type === 'disc') {
       const ts = tF.filter(t => t.disciplina_id === drill.id)
       return ts.length ? ts.map(t => {
-        const mat = [0, 1, 2, 3].filter(i => (t as any)[STG[i]] === 'concluido').length
-        const vid = [4, 5, 6, 7, 8, 9, 10, 11].filter(i => (t as any)[STG[i]] === 'concluido').length
-        const comp = [12, 13].filter(i => (t as any)[STG[i]] === 'concluido').length
-        return (<div key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">Mat {mat}/4 · Víd {vid}/8 · Comp {comp}/2</span></div>)
+        const done = A.doneCount(t, category)
+        return (<Link href={`/disciplinas?id=${t.disciplina_id}&categoria=${category}`} key={t.id} className="dli"><span className="tx">{t.tema_especifico}</span><span className="mt">{categoryConfig.label} · {done}/{STG.length}</span></Link>)
       }) : <div className="empty">Sem temas.</div>
     }
     if (drill.type === 'stage') {
@@ -151,7 +156,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
       <style>{CSS}</style>
 
       <div className="hd">
-        <h1>Painel do Gestor <span className="muted2">· {cycleConfig.label} · {discId ? discById.get(discId)?.nome : 'visão geral'}{profId ? ' · ' + profById.get(profId)?.nome : ''}</span></h1>
+        <h1>Painel do Gestor <span className="muted2">· {ciclo ? cycleConfig.label : 'Minhas disciplinas'} · {categoryConfig.label} · {discId ? discById.get(discId)?.nome : 'visão geral'}{profId ? ' · ' + profById.get(profId)?.nome : ''}</span></h1>
         <div className="flt">
           <select value={discId ?? 'all'} onChange={e => setDiscId(e.target.value === 'all' ? null : +e.target.value)}>
             <option value="all">Todas as disciplinas</option>
@@ -161,11 +166,25 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
             <option value="all">Toda a equipe</option>
             {professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>
-          <span className={'statuspill ' + (proj.date ? (onTrack ? 'ok' : 'risk') : 'warn')}>{proj.date ? (onTrack ? '✓ No prazo' : '⚠ Em risco') : 'Sem ritmo'}</span>
+          <span className={'statuspill ' + (proj.date ? (onTrack ? 'ok' : 'risk') : 'warn')} title="Situação do planejamento editorial; não representa o inventário de PDFs da planilha">Editorial: {proj.date ? (onTrack ? '✓ No prazo' : '⚠ Em risco') : 'Sem ritmo'}</span>
         </div>
       </div>
 
       {loading ? <div className="loading">Carregando…</div> : <>
+      <p style={{ fontSize:12, color:'#64748b', margin:0 }}>{ciclo ? 'Resumos: inventário da planilha para o ciclo inteiro, sem aplicar os filtros. Demais categorias: planejamento editorial por tema.' : 'Nesta visão, as categorias mostram o planejamento editorial por tema; não representam PDFs disponíveis.'}</p>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:10 }}>
+        {CONTENT_CATEGORY_KEYS.map(key => {
+          const config = CONTENT_CATEGORIES[key]
+          const summary = categorySummary(tF, key)
+          const source = key === 'resumos' && ciclo ? resumoPlanilha(ciclo) : null
+          return <button type="button" key={key} aria-pressed={category === key} onClick={() => setCategory(key)} className="kpi clickable" style={{ textAlign:'left', fontFamily:'inherit', borderColor:category === key ? config.color : undefined }}>
+            <div className="l">{config.label}</div><div className="v" style={{ color:config.color }}>{source ? resumoPlanilhaPct(ciclo!) : summary.progresso_geral}%</div>
+            <div className="s">{source ? `${source.prontos}/${source.temas} PDFs prontos · ${source.faltando} faltando` : `${summary.concluidos}/${summary.total_temas} com etapas concluídas`}</div>
+            <div style={{ fontSize:12, color:'#64748b', marginTop:4 }}>{source ? 'Fonte: planilha · ciclo inteiro' : config.unit}</div>
+          </button>
+        })}
+      </div>
+      {category === 'resumos' && ciclo && <ResumoPlanilhaPanel ciclo={ciclo} />}
       <div className="kpis">
         {kpis.map(kp => (
           <div className="kpi clickable" key={kp.l} onClick={() => setDrill({ type: kp.type, title: kp.l })}>
@@ -179,7 +198,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
       <div className="grid">
         {/* Risco de prazo */}
         <div className="panel">
-          <div className="ph"><b>🚩 Risco de prazo</b><span className={'cnt ' + (emRisco ? 'bad' : '')}>{emRisco} em risco</span></div>
+          <div className="ph"><b>🚩 Risco do planejamento editorial</b><span className={'cnt ' + (emRisco ? 'bad' : '')}>{emRisco} em risco</span></div>
           <div className="pb">
             {risk.map(r => (
               <div key={r.id} className={'rk click' + (r.onTrack === false ? ' bad' : '')} onClick={() => setDrill({ type: 'disc', id: r.id, title: r.nome })}>
@@ -259,7 +278,7 @@ export default function GerencialDashboard({ ciclo }: { ciclo?: Ciclo }) {
 }
 
 const CSS = `
-.cockpit{height:calc(100dvh - 64px);display:flex;flex-direction:column;gap:11px;padding:4px 24px 14px;overflow:hidden;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+.cockpit{min-height:calc(100dvh - 160px);display:flex;flex-direction:column;gap:11px;padding:16px 24px 24px;color:#0f172a;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
 .cockpit .hd{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;flex-shrink:0}
 .cockpit h1{font-size:18px;font-weight:800;margin:0;letter-spacing:-.3px}
 .cockpit .muted2{color:#94a3b8;font-weight:500;font-size:13px}

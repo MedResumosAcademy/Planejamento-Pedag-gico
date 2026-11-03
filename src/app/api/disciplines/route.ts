@@ -1,17 +1,16 @@
 import { NextResponse } from 'next/server'
 import { getDisciplinas, getTemas } from '@/lib/db'
 import { parseCiclo } from '@/lib/cycles'
-
-const ALL_SUB_STATUS = [
-  'mat_atualizado', 'mat_revisado', 'mat_diagramado', 'mat_conferencia',
-  'vid_envio_tema', 'vid_slide_pronto', 'vid_diagramacao', 'vid_aprovacao_slide',
-  'vid_agendamento', 'vid_gravacao_feita', 'vid_aprovacao_aula', 'vid_publicada',
-  'comp_questoes', 'comp_flashcards',
-]
+import { CONTENT_CATEGORY_KEYS, categorySummary, parseContentCategory } from '@/lib/content-categories'
 
 export async function GET(request: Request) {
   const rawCiclo = new URL(request.url).searchParams.get('ciclo')
   const ciclo = parseCiclo(rawCiclo)
+  const rawCategory = new URL(request.url).searchParams.get('categoria')
+  const category = parseContentCategory(rawCategory) ?? 'resumos'
+  if (rawCategory && !parseContentCategory(rawCategory)) {
+    return NextResponse.json({ error: 'Categoria de conteúdo inválida' }, { status: 400 })
+  }
   if (rawCiclo && !ciclo) {
     return NextResponse.json({ error: 'ciclo deve ser "basico" ou "clinico"' }, { status: 400 })
   }
@@ -22,24 +21,8 @@ export async function GET(request: Request) {
 
   const result = disciplinas.map(d => {
     const dt = temas.filter(t => t.disciplina_id === d.id)
-    // Status derivado das etapas (não do campo status_geral, que fica desatualizado):
-    // 0 etapas = pendente · todas as 14 = concluído · qualquer coisa no meio = em andamento.
-    let concluidos = 0, em_andamento = 0, pendentes = 0
-    for (const t of dt) {
-      const done = ALL_SUB_STATUS.filter(k => (t as any)[k] === 'concluido').length
-      if (t.status_geral === 'concluido' || done === ALL_SUB_STATUS.length) concluidos++
-      else if (done > 0 || t.status_geral === 'em_andamento') em_andamento++
-      else pendentes++
-    }
-    const paginas_totais = dt.reduce((a, t) => a + (t.paginas ?? 0), 0)
-    const total_etapas = dt.length * ALL_SUB_STATUS.length
-    const etapas_concluidas = dt.reduce((a, t) =>
-      a + ALL_SUB_STATUS.filter(k => (t as any)[k] === 'concluido').length, 0
-    )
-    const progresso_geral = total_etapas > 0
-      ? Math.round(etapas_concluidas * 100 / total_etapas)
-      : 0
-    return { ...d, total_temas: dt.length, concluidos, em_andamento, pendentes, paginas_totais, etapas_concluidas, total_etapas, progresso_geral }
+    const categorias = Object.fromEntries(CONTENT_CATEGORY_KEYS.map(key => [key, categorySummary(dt, key)]))
+    return { ...d, categoria: category, categorias, ...categorySummary(dt, category) }
   })
 
   return NextResponse.json(result)
